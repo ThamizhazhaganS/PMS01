@@ -8,6 +8,8 @@ export interface Org {
   id: string
   name: string
   kind: OrgKind
+  /** Short prefix used in generated project IDs, e.g. NOVA-2026-001. */
+  code: string
   primaryContactId?: string
 }
 

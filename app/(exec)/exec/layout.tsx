@@ -9,6 +9,7 @@ export default async function ExecLayout({ children }: { children: React.ReactNo
       <AppHeader
         user={user}
         sub="Nova Industries · Executive oversight"
+        searchAction="/portal/search"
         nav={[
           { href: "/exec", label: "Portfolio" },
           { href: "/exec/attention", label: "Needs attention" },

@@ -5,6 +5,7 @@ import { notificationsFor, orgById } from "@/lib/data"
 import { db } from "@/lib/store"
 import { Initials } from "./ui"
 import { NavLinks, NotificationBell } from "./app-header-client"
+import { Search } from "lucide-react"
 
 export function Brand({ sub }: { sub?: string }) {
   return (
@@ -22,7 +23,7 @@ export function Brand({ sub }: { sub?: string }) {
   )
 }
 
-export function AppHeader({ user, nav, sub }: { user: User; nav: { href: string; label: string; count?: number }[]; sub: string }) {
+export function AppHeader({ user, nav, sub, searchAction }: { user: User; nav: { href: string; label: string; count?: number }[]; sub: string; searchAction?: string }) {
   const notes = notificationsFor(user.id).slice(0, 30)
   const org = orgById(user.orgId)
   return (
@@ -31,6 +32,20 @@ export function AppHeader({ user, nav, sub }: { user: User; nav: { href: string;
         <Brand sub={sub} />
         <NavLinks items={nav} />
         <div className="ml-auto flex items-center gap-2">
+          {searchAction && (
+            <form action={searchAction} role="search" className="hidden md:block">
+              <label className="relative block">
+                <span className="sr-only">Search</span>
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <input name="q" placeholder="Search…" className="field h-8 w-44 pl-8 text-xs lg:w-56" />
+              </label>
+            </form>
+          )}
+          {searchAction && (
+            <Link href={searchAction} className="inline-flex size-9 items-center justify-center rounded-md hover:bg-muted md:hidden" aria-label="Search">
+              <Search className="size-4" />
+            </Link>
+          )}
           <NotificationBell items={notes} digestOn={!db().digestOptOut[user.id]} />
           <div className="hidden items-center gap-2 sm:flex">
             <Initials name={user.name} />

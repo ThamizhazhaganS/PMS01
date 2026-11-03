@@ -4,7 +4,9 @@ import { requireUser } from "@/lib/page-ctx"
 import { ROLE_LABEL, LIFECYCLE_LABEL } from "@/lib/domain/rules"
 import { Pill } from "@/components/shared/badges"
 import { PageTitle, Section } from "@/components/shared/ui"
-import { InviteDialog, SelfGrantButton, UserStatusButton } from "@/components/admin/admin-controls"
+import { InviteDialog, OrgDialog, SelfGrantButton, UserStatusButton } from "@/components/admin/admin-controls"
+import Link from "next/link"
+import { buttonVariants } from "@/components/ui/button"
 
 export default async function Admin() {
   const admin = await requireUser(["admin"])
@@ -13,7 +15,7 @@ export default async function Admin() {
   const projects = d.projects.map((p) => ({ id: p.id, name: p.name, code: p.code, orgId: p.clientOrgId, lifecycle: p.lifecycle, workstreams: d.workstreams.filter((w) => w.projectId === p.id).map((w) => ({ id: w.id, name: w.name })) }))
   return (
     <>
-      <PageTitle eyebrow="Morphoverse · Platform" title="Organisations & users" action={<InviteDialog orgs={orgs} projects={projects} />}>
+      <PageTitle eyebrow="Morphoverse · Platform" title="Organisations & users" action={<div className="flex flex-wrap gap-2"><OrgDialog /><Link href="/admin/projects/new" className={buttonVariants({ size: "sm", variant: "outline" })}>New project</Link><InviteDialog orgs={orgs} projects={projects} /></div>}>
         <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-4 text-ok" /> You manage accounts, not content. Project documents, meetings, estimates and comments are not visible here.</span>
       </PageTitle>
 

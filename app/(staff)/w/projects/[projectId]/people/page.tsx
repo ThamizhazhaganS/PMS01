@@ -10,6 +10,7 @@ import { Pill } from "@/components/shared/badges"
 import { Initials, Section } from "@/components/shared/ui"
 import { buttonVariants } from "@/components/ui/button"
 import { AccessRequestButtons, PublishRightSwitch, RemoveMember, WorkstreamChips } from "@/components/staff/people-controls"
+import { AddMemberDialog, AddWorkstreamButton } from "@/components/staff/setup-controls"
 
 export default async function People({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
@@ -45,7 +46,25 @@ export default async function People({ params }: { params: Promise<{ projectId: 
         </Section>
       )}
 
-      <Section title="Members & workstreams" eyebrow={manage ? "You can manage access — every change is logged" : "Read only — you don't have manage-access"}>
+      <Section
+        title="Members & workstreams"
+        eyebrow={manage ? "You can manage access — every change is logged" : "Read only — you don't have manage-access"}
+        action={
+          manage && (
+            <>
+              <AddWorkstreamButton projectId={projectId} />
+              <AddMemberDialog
+                projectId={projectId}
+                workstreams={ws}
+                candidates={db()
+                  .users.filter((u) => u.status !== "deactivated" && !mem.some((m) => m.user.id === u.id))
+                  .filter((u) => u.kind === "director" || u.kind === "team" || ((u.kind === "client_lead" || u.kind === "client_stakeholder") && u.orgId === ctx.project.clientOrgId))
+                  .map((u) => ({ id: u.id, name: u.name, kind: u.kind, side: isStaffKind(u.kind) ? ("staff" as const) : ("client" as const) }))}
+              />
+            </>
+          )
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[46rem] text-sm">
             <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2 font-medium">Person</th><th className="py-2 font-medium">Project role · preset</th><th className="py-2 font-medium">Workstreams</th><th className="py-2 font-medium">Publish right</th><th /></tr></thead>

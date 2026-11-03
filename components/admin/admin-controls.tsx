@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { adminSelfGrant, inviteUser, setUserStatus } from "@/lib/actions"
+import { adminSelfGrant, createOrganisation, inviteUser, setUserStatus } from "@/lib/actions"
 import type { UserKind } from "@/lib/domain/types"
 import { ROLE_LABEL } from "@/lib/domain/rules"
 import { ActionButton } from "@/components/shared/dialogs"
@@ -89,4 +89,30 @@ export function UserStatusButton({ id, status }: { id: string; status: string })
 export function SelfGrantButton({ projectId, granted }: { projectId: string; granted: boolean }) {
   if (granted) return <span className="text-xs text-bad">Self-granted (alerted)</span>
   return <ActionButton size="xs" variant="ghost" onRun={() => adminSelfGrant(projectId)}>Self-grant access…</ActionButton>
+}
+
+export function OrgDialog() {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [code, setCode] = useState("")
+  const { pending, run } = useAction()
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button size="sm" variant="outline" />}>New organisation</DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>New client organisation</DialogTitle>
+          <DialogDescription>The code prefixes its project IDs, e.g. NOVA-2026-001.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <Field label="Name"><input className="field" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+          <Field label="Code (2–6 letters)"><input className="field uppercase" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/[^a-z]/gi, ""))} /></Field>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button disabled={pending} onClick={() => run(() => createOrganisation(name, code), () => { setOpen(false); setName(""); setCode("") })}>Create</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }

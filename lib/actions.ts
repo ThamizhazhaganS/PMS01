@@ -17,6 +17,7 @@ import type {
   Health,
   ImpactReview,
   LineItem,
+  Membership,
   Publication,
   Survey,
   User,
@@ -36,9 +37,9 @@ import {
   isProjectDirector,
   isProjectStaff,
 } from "@/lib/access/audience"
-import { CLOSURE_ITEMS, DEV_OTP, MIN_REASON, fmtDate, todayIso } from "@/lib/domain/rules"
+import { CLOSURE_ITEMS, DEFAULT_PHASES, DEV_OTP, MIN_REASON, fmtDate, isClientKind, todayIso } from "@/lib/domain/rules"
 
-export type Result = { ok: true; message?: string } | { ok: false; error: string }
+export type Result = { ok: true; message?: string; id?: string } | { ok: false; error: string }
 const ok = (message?: string): Result => ({ ok: true, message })
 const fail = (error: string): Result => ({ ok: false, error })
 
@@ -1075,6 +1076,145 @@ export async function archiveProject(projectId: string) {
   audit(user.id, "Lifecycle changed", `${from} → Archived (manual)`, projectId)
   revalidatePath("/", "layout")
   return ok("Archived.")
+}
+
+// ── Projects: creation & setup (REQ-PRJ-01, REQ-ACC-08, REQ-PLN-02) ──────────
+export interface NewProjectInput {
+  name: string
+  clientOrgId: string
+  ownerId: string
+  objectives: string
+  scope: string
+  plannedStart: string
+  targetEnd: string
+  workstreams: string[]
+  teamIds: string[]
+  clientLeadId?: string
+}
+
+export async function createProject(input: NewProjectInput): Promise<Result> {
+  return guard(async () => {
+    const actor = await getViewer()
+    if (!actor || (actor.kind !== "director" && actor.kind !== "admin")) return fail("Only a Director or Administrator can create a project.")
+    const d = db()
+    const org = d.orgs.find((o) => o.id === input.clientOrgId && o.kind === "client")
+    if (!org) return fail("Choose a client organisation.")
+    if (input.name.trim().length < 3) return fail("Give the project a name.")
+    if (input.objectives.trim().length < 10 || input.scope.trim().length < 10) return fail("Objectives and scope summary are required.")
+    // A project owner is always a Morphoverse Director (A-02); a Director creating a project owns it.
+    const ownerId = actor.kind === "director" ? actor.id : input.ownerId
+    const owner = d.users.find((u) => u.id === ownerId && u.kind === "director" && u.status === "active")
+    if (!owner) return fail("The owner must be an active Morphoverse Director.")
+    if (!input.plannedStart || !input.targetEnd || input.targetEnd <= input.plannedStart) return fail("Target end must be after the planned start.")
+    const wsNames = [...new Set(input.workstreams.map((w) => w.trim()).filter(Boolean))]
+    if (wsNames.length === 0) return fail("Add at least one workstream.")
+    const lead = input.clientLeadId ? d.users.find((u) => u.id === input.clientLeadId && u.orgId === org.id && u.kind !== "exec") : undefined
+    if (input.clientLeadId && !lead) return fail("The Client Lead must belong to the client organisation.")
+
+    const year = input.plannedStart.slice(0, 4)
+    const seq = d.projects.filter((p) => p.code.startsWith(`${org.code}-${year}-`)).length + 1
+    const id = newId("p")
+    const code = `${org.code}-${year}-${String(seq).padStart(3, "0")}`
+    d.projects.push({
+      id, code, name: input.name.trim(), clientOrgId: org.id, ownerId: owner.id, lifecycle: "setup",
+      objectives: input.objectives.trim(), scope: input.scope.trim(), timezone: "Asia/Kolkata", currency: "INR",
+      plannedStart: input.plannedStart, targetEnd: input.targetEnd,
+    })
+    DEFAULT_PHASES.forEach((name, i) => d.phases.push({ id: `${id}-ph${i + 1}`, projectId: id, name, order: i + 1 }))
+    const wsIds = wsNames.map((name) => {
+      const w = { id: newId("ws"), projectId: id, name }
+      d.workstreams.push(w)
+      return w.id
+    })
+    const add = (userId: string, role: Membership["role"], extra: Partial<Membership> = {}) =>
+      d.memberships.push({ projectId: id, userId, role, workstreamIds: wsIds, publishRight: role === "owner" || role === "director", manageAccess: role === "owner", preset: role === "owner" ? "Full project access" : role === "client_lead" ? "Approver" : "Collaborator", ...extra })
+    add(owner.id, "owner")
+    for (const uid of new Set(input.teamIds)) {
+      const u = d.users.find((x) => x.id === uid && x.orgId === "org-morph" && (x.kind === "team" || x.kind === "director"))
+      if (u && u.id !== owner.id) add(u.id, u.kind === "director" ? "director" : "team")
+    }
+    if (lead) add(lead.id, "client_lead")
+    audit(actor.id, "Project created", `${code} created by ${actor.name} from the default 8-phase template; owner ${owner.name}; ${wsNames.length} workstream(s)`, id, actor.kind === "admin")
+    notify({ userIds: d.memberships.filter((m) => m.projectId === id).map((m) => m.userId), tier: 1, title: `You were added to ${input.name.trim()} (${code})`, projectId: id, exclude: actor.id, canSee: (u) => !isClientKind(u.kind) })
+    return { ok: true, message: `Created ${code} in Setup. Clients see nothing until an estimate is shared.`, id }
+  })
+}
+
+export async function addWorkstream(projectId: string, name: string) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!canManageAccess(ctx)) return fail("You don't have the manage-access right.")
+    if (name.trim().length < 2) return fail("Name the workstream.")
+    if (db().workstreams.some((w) => w.projectId === projectId && w.name.toLowerCase() === name.trim().toLowerCase())) return fail("That workstream exists.")
+    const w = { id: newId("ws"), projectId, name: name.trim() }
+    db().workstreams.push(w)
+    // The owner always spans every workstream.
+    db().memberships.filter((m) => m.projectId === projectId && m.role === "owner").forEach((m) => m.workstreamIds.push(w.id))
+    audit(ctx.user.id, "Workstream added", w.name, projectId)
+    return ok(`Workstream “${w.name}” added. Members join it explicitly.`)
+  })
+}
+
+export async function addMember(projectId: string, userId: string, role: Membership["role"], workstreamIds: string[]) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!canManageAccess(ctx)) return fail("You don't have the manage-access right.")
+    const d = db()
+    const u = d.users.find((x) => x.id === userId && x.status !== "deactivated")
+    if (!u) return fail("Choose a user.")
+    if (d.memberships.some((m) => m.projectId === projectId && m.userId === userId)) return fail(`${u.name} is already a member.`)
+    if (role === "owner") return fail("A project has one owner.")
+    const staffRole = role === "director" || role === "team"
+    if (staffRole && !(u.kind === "director" || u.kind === "team")) return fail("Only Morphoverse staff can hold a staff role.")
+    if (staffRole && role === "director" && u.kind !== "director") return fail("Only Directors can join as Director.")
+    if (!staffRole && (u.orgId !== ctx.project.clientOrgId || u.kind === "exec")) return fail("Client members must belong to this project's client organisation.")
+    const valid = workstreamIds.filter((w) => d.workstreams.some((x) => x.id === w && x.projectId === projectId))
+    d.memberships.push({ projectId, userId, role, workstreamIds: valid, publishRight: role === "director", manageAccess: false, preset: role === "client_lead" ? "Approver" : staffRole ? "Collaborator" : "Workstream contributor" })
+    audit(ctx.user.id, "Access granted", `${u.name} added as ${role.replace("_", " ")}${valid.length ? ` to ${valid.map(wsName).join(", ")}` : " (no workstreams)"}`, projectId, true)
+    if (staffRole || ctx.project.lifecycle !== "setup")
+      notify({ userIds: [u.id], tier: 1, title: `You were added to ${ctx.project.name}`, projectId })
+    return ok(`${u.name} added.`)
+  })
+}
+
+export async function addMilestone(projectId: string, input: { name: string; phaseId: string; workstreamId?: string; ownerId: string; counterpartId?: string; acceptance: "client" | "internal"; criteria: string; date: string; changeRequestId?: string }) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isProjectDirector(ctx)) return fail("Only a Director adds milestones.")
+    const d = db()
+    if (input.name.trim().length < 3) return fail("Name the milestone.")
+    if (!d.phases.some((p) => p.id === input.phaseId && p.projectId === projectId)) return fail("Choose a phase.")
+    if (!input.date) return fail("Set a date.")
+    if (input.acceptance === "client" && input.criteria.trim().length < 5) return fail("Acceptance criteria are required for client-acceptance milestones.")
+    if (!d.memberships.some((m) => m.projectId === projectId && m.userId === input.ownerId)) return fail("The owner must be a project member.")
+    if (input.workstreamId && !d.workstreams.some((w) => w.id === input.workstreamId && w.projectId === projectId)) return fail("Unknown workstream.")
+    // After the first estimate approval the plan is baselined: new commitments come through a change request.
+    const baselined = !["setup", "proposal"].includes(ctx.project.lifecycle)
+    if (baselined) {
+      const cr = d.changeRequests.find((c) => c.id === input.changeRequestId && c.projectId === projectId)
+      if (!cr || !["approved", "implemented"].includes(cr.state)) return fail("The plan is baselined — link an approved change request to add a milestone.")
+    }
+    const audience: Audience = input.workstreamId ? { kind: "workstream", workstreamId: input.workstreamId } : { kind: "client" }
+    d.milestones.push({
+      id: newId("m"), projectId, phaseId: input.phaseId, name: input.name.trim(), description: "", ownerId: input.ownerId,
+      counterpartId: input.counterpartId || undefined, acceptance: input.acceptance, criteria: input.criteria.trim(),
+      baselineDate: baselined ? input.date : undefined, currentDate: input.date, state: "planned", dateChanges: [], audience, authorId: ctx.user.id,
+    })
+    audit(ctx.user.id, "Milestone added", `${input.name.trim()} (${fmtDate(input.date)})${baselined ? ` via ${d.changeRequests.find((c) => c.id === input.changeRequestId)?.number ? `CR-${d.changeRequests.find((c) => c.id === input.changeRequestId)!.number}` : "change request"}` : ""}`, projectId)
+    return ok(baselined ? "Milestone added under the approved change request." : "Milestone added. Its baseline freezes when the first estimate is approved.")
+  })
+}
+
+export async function createOrganisation(name: string, code: string) {
+  return guard(async () => {
+    const admin = await requireAdmin()
+    const c = code.trim().toUpperCase()
+    if (name.trim().length < 2 || !/^[A-Z]{2,6}$/.test(c)) return fail("Give a name and a 2–6 letter code.")
+    if (db().orgs.some((o) => o.code === c || o.name.toLowerCase() === name.trim().toLowerCase())) return fail("That organisation or code exists.")
+    db().orgs.push({ id: newId("org"), name: name.trim(), kind: "client", code: c })
+    audit(admin.id, "Organisation created", `${name.trim()} (${c})`, undefined, true)
+    return ok("Client organisation created.")
+  })
 }
 
 // ── Administrator ───────────────────────────────────────────────────────────

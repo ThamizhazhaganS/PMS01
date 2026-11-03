@@ -61,9 +61,9 @@ function member(
 export function seed(): DB {
   const db: DB = {
     orgs: [
-      { id: "org-morph", name: "Morphoverse", kind: "agency" },
-      { id: "org-nova", name: "Nova Industries", kind: "client", primaryContactId: "u-jordan" },
-      { id: "org-helix", name: "Helix Retail", kind: "client", primaryContactId: "u-emma" },
+      { id: "org-morph", name: "Morphoverse", kind: "agency", code: "MV" },
+      { id: "org-nova", name: "Nova Industries", kind: "client", code: "NOVA", primaryContactId: "u-jordan" },
+      { id: "org-helix", name: "Helix Retail", kind: "client", code: "HLX", primaryContactId: "u-emma" },
     ],
     users: [
       { id: "u-admin", name: "John Carter", email: "admin@morphoverse.com", orgId: "org-morph", kind: "admin", title: "Platform Administrator", status: "active" },

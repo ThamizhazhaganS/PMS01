@@ -2,6 +2,9 @@ import { ctxFor, needsYou, orgById, projectsFor, summary } from "@/lib/data"
 import { requireUser } from "@/lib/page-ctx"
 import { ProjectCard } from "@/components/shared/project-card"
 import { Empty, PageTitle } from "@/components/shared/ui"
+import Link from "next/link"
+import { Plus } from "lucide-react"
+import { buttonVariants } from "@/components/ui/button"
 
 export default async function StaffHome() {
   const user = await requireUser(["director", "team"])
@@ -9,7 +12,11 @@ export default async function StaffHome() {
   const needs = needsYou(user)
   return (
     <>
-      <PageTitle eyebrow="Morphoverse · Engagements" title={<>Good to see you, <em>{user.name.split(" ")[0]}</em>.</>}>
+      <PageTitle
+        eyebrow="Morphoverse · Engagements"
+        title={<>Good to see you, <em>{user.name.split(" ")[0]}</em>.</>}
+        action={user.kind === "director" && <Link href="/w/new" className={buttonVariants()}><Plus /> New project</Link>}
+      >
         You see only the engagements you are a member of. There is no firm-wide view.
       </PageTitle>
       {projects.length === 0 ? (

@@ -18,7 +18,7 @@ export default async function PortalLayout({ children }: { children: React.React
         ]
   return (
     <>
-      <AppHeader user={user} sub="Nova Industries × Morphoverse" nav={nav} />
+      <AppHeader user={user} sub="Nova Industries × Morphoverse" nav={nav} searchAction="/portal/search" />
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
     </>
   )

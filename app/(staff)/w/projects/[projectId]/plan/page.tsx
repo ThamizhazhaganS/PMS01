@@ -8,6 +8,8 @@ import { AudienceBadge, MilestoneStateBadge, Pill } from "@/components/shared/ba
 import { MilestoneDates } from "@/components/shared/milestone-dates"
 import { Empty, Section } from "@/components/shared/ui"
 import { ActionStateButtons, AddActionDialog, AddBlockerDialog, MilestoneActions, ResolveBlocker } from "@/components/staff/plan-controls"
+import { AddMilestoneDialog } from "@/components/staff/setup-controls"
+import { isStaffKind } from "@/lib/domain/rules"
 
 export default async function Plan({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
@@ -26,7 +28,24 @@ export default async function Plan({ params }: { params: Promise<{ projectId: st
 
   return (
     <div className="space-y-5">
-      <Section title="Phases & milestones" eyebrow="Baseline vs current — reasons on hover or tap">
+      <Section
+        title="Phases & milestones"
+        eyebrow="Baseline vs current — reasons on hover or tap"
+        action={
+          isProjectDirector(ctx) && (
+            <AddMilestoneDialog
+              projectId={projectId}
+              phases={phases(projectId).map((p) => ({ id: p.id, name: p.name }))}
+              workstreams={workstreams(projectId).map((w) => ({ id: w.id, name: w.name }))}
+              members={people.map((p) => ({ id: p.user.id, name: p.user.name }))}
+              clients={people.filter((p) => !isStaffKind(p.user.kind)).map((p) => ({ id: p.user.id, name: p.user.name }))}
+              baselined={!["setup", "proposal"].includes(ctx.project.lifecycle)}
+              changes={changeRequests(ctx).filter((c) => ["approved", "implemented"].includes(c.state)).map((c) => ({ id: c.id, name: `CR-${c.number} ${c.what}` }))}
+            />
+          )
+        }
+      >
+        {ms.length === 0 && <div className="mb-4"><Empty title="No milestones yet" hint="Add milestones before drafting the estimate — its schedule snapshot is taken from them." /></div>}
         <div className="space-y-6">
           {phases(projectId).map((ph) => {
             const pm = ms.filter((m) => m.phaseId === ph.id)
