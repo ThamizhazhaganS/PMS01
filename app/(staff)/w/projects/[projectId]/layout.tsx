@@ -16,9 +16,15 @@ export default async function ProjectLayout({ children, params }: { children: Re
   return (
     <div>
       <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-        <Link href="/w" className="hover:text-foreground">Dashboard</Link>
-        <ChevronRight className="size-3.5" aria-hidden />
-        <Link href={`/w/orgs/${p.clientOrgId}`} className="hover:text-foreground">{orgById(p.clientOrgId)?.name}</Link>
+        {ctx.user.kind === "director" ? (
+          <>
+            <Link href="/w" className="hover:text-foreground">Dashboard</Link>
+            <ChevronRight className="size-3.5" aria-hidden />
+            <Link href={`/w/orgs/${p.clientOrgId}`} className="hover:text-foreground">{orgById(p.clientOrgId)?.name}</Link>
+          </>
+        ) : (
+          <Link href="/w/projects" className="hover:text-foreground">Projects</Link>
+        )}
         <ChevronRight className="size-3.5" aria-hidden />
         <span className="text-foreground">{p.code}</span>
       </nav>
@@ -57,7 +63,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
       )}
       {["closed", "cancelled", "archived"].includes(p.lifecycle) && (
         <div className="mb-4 rounded-lg border bg-muted p-3 text-sm">
-          <b>Read-only.</b> This project is {p.lifecycle}. Records are retained and cannot be changed; a Director can reopen it with a reason.
+          <b>Read-only.</b> This project is {p.lifecycle}. Records are retained and cannot be changed; the CEO can reopen it with a reason.
         </div>
       )}
       {p.cancelRequest && p.lifecycle !== "cancelled" && (
@@ -65,7 +71,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
           <OctagonAlert className="mt-0.5 size-4 shrink-0 text-bad" />
           <div>
             <b>Cancellation requested</b> by {userName(p.cancelRequest.by)} on {fmtDate(p.cancelRequest.at)}: {p.cancelRequest.reason}
-            <div className="text-xs text-muted-foreground">Another Director must confirm.</div>
+            <div className="text-xs text-muted-foreground">Waiting for an Admin to confirm.</div>
           </div>
         </div>
       )}

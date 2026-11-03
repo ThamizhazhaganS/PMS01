@@ -21,12 +21,12 @@ export default async function AllProjects() {
       >
         Only the engagements you are a member of.
       </PageTitle>
-      {orgs.length === 0 && <Empty title="No engagements yet" hint="A Director adds you to a project when you join its team." />}
+      {orgs.length === 0 && <Empty title="No engagements yet" hint="The CEO adds you to a project when you join its team." />}
       <div className="space-y-8">
         {orgs.map(({ org, rows }) => (
           <section key={org.id} aria-labelledby={`org-${org.id}`}>
             <h2 id={`org-${org.id}`} className="mb-3 flex items-baseline gap-2 text-sm font-semibold">
-              <Link href={`/w/orgs/${org.id}`} className="hover:underline">{org.name}</Link>
+              {user.kind === "director" ? <Link href={`/w/orgs/${org.id}`} className="hover:underline">{org.name}</Link> : org.name}
               <span className="text-xs font-normal text-muted-foreground">{rows.length} project{rows.length === 1 ? "" : "s"}</span>
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

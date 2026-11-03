@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { Plus } from "lucide-react"
 import { needsYou, orgById } from "@/lib/data"
 import { attentionFor } from "@/lib/attention"
@@ -9,9 +10,11 @@ import { Empty, PageTitle, Section } from "@/components/shared/ui"
 import { AttentionList, KpiRow, OrgCard } from "@/components/staff/dashboard"
 import { buttonVariants } from "@/components/ui/button"
 
-/** Morphoverse home: dashboard first, then organisations → projects. */
+/** CEO home: dashboard first, then organisations → projects. */
 export default async function Dashboard() {
   const user = await requireUser(["director", "team"])
+  // The dashboard is the CEO's view; Team Members land on their projects.
+  if (user.kind !== "director") redirect("/w/projects")
   const { orgs, totals } = portfolioByOrg(user)
   const attention = attentionFor(user)
   const needs = needsYou(user)
@@ -33,7 +36,7 @@ export default async function Dashboard() {
       </PageTitle>
 
       {orgs.length === 0 ? (
-        <Empty title="No engagements yet" hint="A Director adds you to a project when you join its team." />
+        <Empty title="No engagements yet" hint="The CEO adds you to a project when you join its team." />
       ) : (
         <div className="space-y-6">
           <KpiRow t={totals} showMoney />

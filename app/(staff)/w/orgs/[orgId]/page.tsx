@@ -12,7 +12,7 @@ import { AttentionList, KpiRow } from "@/components/staff/dashboard"
 /** One client organisation: its numbers and the viewer's projects with it. */
 export default async function OrgPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params
-  const user = await requireUser(["director", "team"])
+  const user = await requireUser(["director"])
   // Only organisations where the viewer has a project; anything else looks like it doesn't exist.
   const entry = portfolioByOrg(user).orgs.find((o) => o.org.id === orgId)
   if (!entry) notFound()

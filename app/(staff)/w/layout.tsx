@@ -12,7 +12,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
         sub="Morphoverse workspace"
         searchAction="/w/search"
         nav={[
-          { href: "/w", label: "Dashboard" },
+          ...(user.kind === "director" ? [{ href: "/w", label: "Dashboard" }] : []),
           { href: "/w/projects", label: "Projects" },
           { href: "/w/needs-me", label: "Needs me", count },
         ]}

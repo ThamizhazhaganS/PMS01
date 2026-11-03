@@ -44,7 +44,7 @@ export function NewProjectForm({ orgs, directors, staff, clients, ownerFixed, do
               {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
           </Field>
-          <Field label="Owner (Director)" hint={ownerFixed ? "You own projects you create." : "A project owner is always a Morphoverse Director."}>
+          <Field label="Owner (CEO)" hint={ownerFixed ? "You own projects you create." : "A project owner is always a Morphoverse CEO."}>
             <select className="field" value={f.ownerId} disabled={!!ownerFixed} onChange={set("ownerId")}>
               {directors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>

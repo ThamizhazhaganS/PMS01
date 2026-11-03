@@ -30,7 +30,7 @@ export default async function Commercial({ params, searchParams }: { params: Pro
           <h2 className="text-sm font-semibold">Versions</h2>
           {director && <ActionButton size="xs" onRun={newEstimateVersion.bind(null, projectId)}>New version</ActionButton>}
         </div>
-        {list.length === 0 && <Empty title="No estimate yet" hint="Directors draft the commercial estimate here." />}
+        {list.length === 0 && <Empty title="No estimate yet" hint="CEOs draft the commercial estimate here." />}
         <ul className="space-y-2">
           {list.map((e) => (
             <li key={e.id}>

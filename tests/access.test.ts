@@ -98,18 +98,19 @@ describe("T-06 Named access requests", () => {
   })
 })
 
-describe("T-07 Director partitioning", () => {
-  it("Director B cannot see Director A's other workstream or Named items", () => {
-    const docs = ids(fullDocs("u-rajiv", "p1"))
-    expect(docs).not.toContain("doc2")
-    expect(docs).not.toContain("doc4")
-    expect(ids(milestones(raw("u-rajiv", "p1")))).not.toContain("m4")
-    expect(shell("u-tashi", "p3")).toBeNull()
+describe("T-07 staff partitioning", () => {
+  it("a Morphoverse team member sees only their own workstream and is never on Named lists by default", () => {
+    const docs = ids(fullDocs("u-shrenik-team", "p1")) // HR workstream only
+    expect(docs).toContain("doc2")
+    expect(docs).not.toContain("doc8") // IT workstream
+    expect(docs).not.toContain("doc4") // Named
+    expect(ids(milestones(raw("u-shrenik-team", "p1")))).not.toContain("m5")
+    expect(shell("u-sanjeev", "p3")).toBeNull() // not a member of P3
   })
 })
 
 describe("T-08 Administrator has no content access", () => {
-  it("is refused content; a self-grant logs a security event and alerts Directors", async () => {
+  it("is refused content; a self-grant logs a security event and alerts the CEO", async () => {
     expect(shell("u-admin", "p1")).toBeNull()
     expect(await fetchFile("u-admin", "doc1")).toBe(404)
 

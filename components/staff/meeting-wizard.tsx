@@ -233,7 +233,7 @@ export function MeetingWizard({ data, docs, canPublish }: { data: PickerData; do
             )}
           </div>
         </div>
-        {!canPublish && step === STEPS.length - 1 && <p className="mt-2 text-right text-xs text-warn">You don&apos;t have the publish right. Save as Draft and a Director can publish it.</p>}
+        {!canPublish && step === STEPS.length - 1 && <p className="mt-2 text-right text-xs text-warn">You don&apos;t have the publish right. Save as Draft and the CEO can publish it.</p>}
       </div>
     </div>
   )

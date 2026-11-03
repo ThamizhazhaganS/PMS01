@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { adminSelfGrant, createOrganisation, inviteUser, setUserStatus } from "@/lib/actions"
+import { adminConfirmCancel, adminSelfGrant, createOrganisation, inviteUser, setUserStatus } from "@/lib/actions"
 import type { UserKind } from "@/lib/domain/types"
 import { ROLE_LABEL } from "@/lib/domain/rules"
 import { ActionButton } from "@/components/shared/dialogs"
@@ -12,7 +12,7 @@ import { useAction } from "@/components/shared/use-action"
 
 const PRESET_HINT: Partial<Record<UserKind, string>> = {
   director: "Full project access on projects they own",
-  team: "Collaborator — drafts only until a Director grants publish right",
+  team: "Collaborator — drafts only until the CEO grants publish right",
   client_lead: "Approver preset — can be designated on approval requests",
   client_stakeholder: "Workstream contributor — sees only their workstream + Client-wide",
   exec: "Portfolio oversight across the organisation (no Team content)",
@@ -115,4 +115,8 @@ export function OrgDialog() {
       </DialogContent>
     </Dialog>
   )
+}
+
+export function ConfirmCancelButton({ projectId }: { projectId: string }) {
+  return <ActionButton size="xs" variant="destructive" onRun={() => adminConfirmCancel(projectId)}>Confirm cancellation</ActionButton>
 }

@@ -48,7 +48,7 @@ export function EstimateBody({ e, total, clientView }: { e: Estimate; total?: nu
           </table>
         </div>
       )}
-      {clientView && e.detailLevel === "total" && <p className="text-xs text-muted-foreground">This estimate is shared as a total. Ask your Morphoverse Director for a breakdown.</p>}
+      {clientView && e.detailLevel === "total" && <p className="text-xs text-muted-foreground">This estimate is shared as a total. Ask your Morphoverse CEO for a breakdown.</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <h4 className="eyebrow mb-1.5">Assumptions</h4>

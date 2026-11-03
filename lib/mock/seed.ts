@@ -67,7 +67,7 @@ export function seed(): DB {
     ],
     users: [
       { id: "u-admin", name: "Shrenik", email: "shrenik.admin@morphoverse.com", orgId: "org-morph", kind: "admin", title: "Admin", status: "active" },
-      { id: "u-tashi", name: "Tashi", email: "tashi@morphoverse.com", orgId: "org-morph", kind: "director", title: "Director", status: "active" },
+      { id: "u-tashi", name: "Tashi", email: "tashi@morphoverse.com", orgId: "org-morph", kind: "director", title: "CEO", status: "active" },
       { id: "u-sanjeev", name: "Sanjeev", email: "sanjeev@morphoverse.com", orgId: "org-morph", kind: "team", title: "Team Member", status: "active" },
       { id: "u-shrenik-team", name: "Shrenik", email: "shrenik@morphoverse.com", orgId: "org-morph", kind: "team", title: "Team Member", status: "active" },
       { id: "u-priyanka", name: "Priyanka", email: "priyanka@morphoverse.com", orgId: "org-morph", kind: "team", title: "Team Member", status: "active" },
@@ -75,7 +75,6 @@ export function seed(): DB {
       { id: "u-gulzer", name: "Gulzer", email: "gulzer@novaindustries.com", orgId: "org-nova", kind: "client_lead", title: "Client Lead", status: "active" },
       { id: "u-diva", name: "Diva", email: "diva@novaindustries.com", orgId: "org-nova", kind: "client_stakeholder", title: "Client Stakeholder (HR)", status: "active" },
       // More test users
-      { id: "u-rajiv", name: "Rajiv Menon", email: "rajiv.director@morphoverse.com", orgId: "org-morph", kind: "director", title: "Director", status: "active", extra: true },
       { id: "u-arjun", name: "Arjun Nair", email: "arjun.nair@novaindustries.com", orgId: "org-nova", kind: "client_stakeholder", title: "IT Infrastructure Lead", status: "active", extra: true },
       { id: "u-emma", name: "Emma Brooks", email: "emma.brooks@helixretail.com", orgId: "org-helix", kind: "client_lead", title: "COO, Helix Retail", status: "active", extra: true },
     ],
@@ -113,7 +112,7 @@ export function seed(): DB {
         code: "NOVA-2026-003",
         name: "Plant Safety Digital Audit",
         clientOrgId: "org-nova",
-        ownerId: "u-rajiv",
+        ownerId: "u-tashi",
         lifecycle: "paused",
         objectives: "Digitise the plant safety audit process and benchmark against ISO 45001.",
         scope: "Audit process mapping, tool selection, two-plant pilot.",
@@ -121,7 +120,7 @@ export function seed(): DB {
         currency: "INR",
         plannedStart: d(-60),
         targetEnd: d(40),
-        pause: { reason: "Site access for Chakan plant suspended during annual maintenance shutdown.", at: dt(-20), by: "u-rajiv" },
+        pause: { reason: "Site access for Chakan plant suspended during annual maintenance shutdown.", at: dt(-20), by: "u-tashi" },
       },
       {
         id: "p5",
@@ -142,7 +141,7 @@ export function seed(): DB {
         code: "HLX-2026-001",
         name: "Store Network Expansion Review",
         clientOrgId: "org-helix",
-        ownerId: "u-rajiv",
+        ownerId: "u-tashi",
         lifecycle: "active",
         objectives: "Assess 40 candidate locations for Helix's 2027 store expansion.",
         scope: "Catchment analysis, site scoring model, board recommendation.",
@@ -165,14 +164,13 @@ export function seed(): DB {
       member("p1", "u-sanjeev", "team", ["ws-hr", "ws-it"], { publishRight: true }),
       member("p1", "u-shrenik-team", "team", ["ws-hr"]),
       member("p1", "u-priyanka", "team", ["ws-hr", "ws-it"], { publishRight: true }),
-      member("p1", "u-rajiv", "director", ["ws-it"], { preset: "Workstream contributor" }),
       member("p1", "u-gulzer", "client_lead", ["ws-hr", "ws-it"]),
       member("p1", "u-diva", "client_stakeholder", ["ws-hr"]),
       member("p1", "u-arjun", "client_stakeholder", ["ws-it"]),
       member("p2", "u-tashi", "owner", ["ws-p2"]),
       member("p2", "u-sanjeev", "team", ["ws-p2"], { publishRight: true }),
       member("p2", "u-gulzer", "client_lead", ["ws-p2"]),
-      member("p3", "u-rajiv", "owner", ["ws-p3"]),
+      member("p3", "u-tashi", "owner", ["ws-p3"]),
       member("p3", "u-shrenik-team", "team", ["ws-p3"]),
       member("p3", "u-gulzer", "client_lead", ["ws-p3"]),
       member("p3", "u-diva", "client_stakeholder", ["ws-p3"]),
@@ -180,8 +178,7 @@ export function seed(): DB {
       member("p5", "u-sanjeev", "team", ["ws-p5"], { publishRight: true }),
       member("p5", "u-priyanka", "team", ["ws-p5"]),
       member("p5", "u-gulzer", "client_lead", ["ws-p5"]),
-      member("p4", "u-rajiv", "owner", ["ws-p4"]),
-      member("p4", "u-tashi", "director", ["ws-p4"]),
+      member("p4", "u-tashi", "owner", ["ws-p4"]),
       member("p4", "u-emma", "client_lead", ["ws-p4"]),
     ],
     statuses: [
@@ -220,7 +217,7 @@ export function seed(): DB {
         health: "delayed",
         explanation: "Site access unavailable; pilot cannot start until the plant reopens.",
         nextSteps: "Confirm reopening date with Nova facilities.",
-        authorId: "u-rajiv",
+        authorId: "u-tashi",
         at: dt(-21, 10),
       },
       {
@@ -238,7 +235,7 @@ export function seed(): DB {
         text: "Catchment analysis complete for 28 of 40 sites.",
         health: "on_track",
         nextSteps: "Finish remaining sites; draft scoring model.",
-        authorId: "u-rajiv",
+        authorId: "u-tashi",
         at: dt(-3, 16),
       },
     ],
@@ -311,14 +308,14 @@ export function seed(): DB {
     m("m22", "p2", 4, "Category deep-dives", { base: 70, baselineDate: undefined, criteria: "Logistics, MRO, IT categories." }),
     m("m23", "p2", 7, "Savings plan sign-off", { base: 105, baselineDate: undefined, criteria: "Signed-off savings plan." }),
     // P3 — paused
-    m("m31", "p3", 2, "Audit process map", { base: -30, state: "accepted", acceptedAt: dt(-29), ownerId: "u-rajiv", criteria: "As-is audit process for both plants." }),
+    m("m31", "p3", 2, "Audit process map", { base: -30, state: "accepted", acceptedAt: dt(-29), ownerId: "u-tashi", criteria: "As-is audit process for both plants." }),
     m("m32", "p3", 4, "Two-plant digital pilot", { base: 10, state: "in_progress", ownerId: "u-shrenik-team", criteria: "Pilot runs for 4 weeks at Chakan and Ranjangaon." }),
     // P4 — Helix
     m("m51", "p5", 2, "Supplier code benchmark", { base: -30, state: "accepted", acceptedAt: dt(-29), criteria: "Benchmark against 5 peers.", ownerId: "u-sanjeev" }),
     m("m52", "p5", 7, "Revised code of conduct", { base: -6, state: "accepted", acceptedAt: dt(-5), criteria: "Approved by Nova legal and procurement.", ownerId: "u-tashi" }),
     m("m53", "p5", 8, "Onboarding checklist handover", { base: -3, acceptance: "internal", state: "accepted", acceptedAt: dt(-3), ownerId: "u-sanjeev" }),
-    m("m41", "p4", 2, "Catchment analysis", { base: 5, state: "in_progress", ownerId: "u-rajiv", criteria: "All 40 sites analysed." }),
-    m("m42", "p4", 7, "Board recommendation", { base: 45, ownerId: "u-rajiv", criteria: "Board accepts ranked shortlist." }),
+    m("m41", "p4", 2, "Catchment analysis", { base: 5, state: "in_progress", ownerId: "u-tashi", criteria: "All 40 sites analysed." }),
+    m("m42", "p4", 7, "Board recommendation", { base: 45, ownerId: "u-tashi", criteria: "Board accepts ranked shortlist." }),
   )
 
   db.blockers.push(
@@ -344,7 +341,7 @@ export function seed(): DB {
       expectedResolution: d(-2),
       milestoneIds: ["m32"],
       audience: CLIENT,
-      authorId: "u-rajiv",
+      authorId: "u-tashi",
     },
   )
 
@@ -373,7 +370,7 @@ export function seed(): DB {
     { id: "doc9", projectId: "p1", title: "Old org chart (retracted)", kind: "reference", phaseId: "p1-ph2", audience: CLIENT, authorId: "u-sanjeev", publishedAt: dt(-40), retracted: { reason: "Contained personal data of employees on leave; replaced by anonymised chart in the assessment report.", at: dt(-39), by: "u-tashi" }, versions: [v(1, "OrgChart.pdf", 300, "Initial.", -40)] },
     { id: "doc21", projectId: "p2", title: "Procurement proposal deck", kind: "reference", audience: CLIENT, authorId: "u-tashi", publishedAt: dt(-6), versions: [v(1, "Procurement_Proposal.pdf", 1900, "Proposal deck v1.", -6, "u-tashi")] },
     { id: "doc51", projectId: "p5", title: "Supplier Code of Conduct v2", kind: "deliverable", audience: CLIENT, authorId: "u-tashi", publishedAt: dt(-6), versions: [v(1, "Supplier_Code_v2.pdf", 1300, "Revised code for approval.", -6, "u-tashi")] },
-    { id: "doc41", projectId: "p4", title: "Helix catchment interim findings", kind: "deliverable", audience: CLIENT, authorId: "u-rajiv", publishedAt: dt(-3), versions: [v(1, "Helix_catchment_interim.pdf", 2200, "Interim.", -3, "u-rajiv")] },
+    { id: "doc41", projectId: "p4", title: "Helix catchment interim findings", kind: "deliverable", audience: CLIENT, authorId: "u-tashi", publishedAt: dt(-3), versions: [v(1, "Helix_catchment_interim.pdf", 2200, "Interim.", -3, "u-tashi")] },
   )
 
   // ── Decisions ─────────────────────────────────────────────────────────────
@@ -422,7 +419,7 @@ export function seed(): DB {
     {
       id: "pub41", projectId: "p4", kind: "update", title: "Helix interim catchment findings", publishedAt: dt(-3), createdAt: dt(-3),
       summary: "28 of 40 sites analysed.", attendeeIds: [], decisionIds: [], actionIds: [], attachments: [{ documentId: "doc41", version: 1 }],
-      actionRequired: false, state: "published", version: 1, audience: CLIENT, authorId: "u-rajiv",
+      actionRequired: false, state: "published", version: 1, audience: CLIENT, authorId: "u-tashi",
     },
   )
 
@@ -445,7 +442,7 @@ export function seed(): DB {
       deliverables: ["Current-state assessment report", "HR target operating model", "IT systems landscape blueprint", "Consolidated recommendations & roadmap"],
       effortDays: 260, durationWeeks: 19,
       lineItems: [
-        { id: "li1", label: "Director", qty: 30, unit: "days", rate: 180000 },
+        { id: "li1", label: "CEO", qty: 30, unit: "days", rate: 180000 },
         { id: "li2", label: "Senior consultant", qty: 110, unit: "days", rate: 95000 },
         { id: "li3", label: "Analyst", qty: 120, unit: "days", rate: 55000 },
       ],
@@ -463,7 +460,7 @@ export function seed(): DB {
       deliverables: ["Current-state assessment report", "HR target operating model", "IT systems landscape blueprint", "Finance shared-services assessment", "Consolidated recommendations & roadmap"],
       effortDays: 290, durationWeeks: 21,
       lineItems: [
-        { id: "li1", label: "Director", qty: 33, unit: "days", rate: 180000 },
+        { id: "li1", label: "CEO", qty: 33, unit: "days", rate: 180000 },
         { id: "li2", label: "Senior consultant", qty: 125, unit: "days", rate: 95000 },
         { id: "li3", label: "Analyst", qty: 132, unit: "days", rate: 55000 },
       ],
@@ -481,7 +478,7 @@ export function seed(): DB {
       deliverables: ["Spend cube & baseline", "Three category deep-dives", "Negotiation playbooks", "Savings plan"],
       effortDays: 180, durationWeeks: 14,
       lineItems: [
-        { id: "li1", label: "Director", qty: 18, unit: "days", rate: 180000 },
+        { id: "li1", label: "CEO", qty: 18, unit: "days", rate: 180000 },
         { id: "li2", label: "Senior consultant", qty: 72, unit: "days", rate: 95000 },
         { id: "li3", label: "Analyst", qty: 90, unit: "days", rate: 55000 },
       ],
@@ -501,7 +498,7 @@ export function seed(): DB {
       expenses: 180000, taxRate: 18, assumptions: ["Site access to both plants"], exclusions: ["Hardware"],
       validUntil: d(-50), detailLevel: "line_items",
       internal: { costPerDay: 40000, targetMarginPct: 36, notes: "" },
-      createdAt: dt(-70), createdBy: "u-rajiv", sharedAt: dt(-68), approvedAt: dt(-62),
+      createdAt: dt(-70), createdBy: "u-tashi", sharedAt: dt(-68), approvedAt: dt(-62),
       scheduleSnapshot: snap(["m31", "m32"]),
     },
     {
@@ -523,7 +520,7 @@ export function seed(): DB {
       expenses: 120000, taxRate: 18, assumptions: [], exclusions: [],
       validUntil: d(-25), detailLevel: "total",
       internal: { costPerDay: 40000, targetMarginPct: 42, notes: "" },
-      createdAt: dt(-40), createdBy: "u-rajiv", sharedAt: dt(-38), approvedAt: dt(-33),
+      createdAt: dt(-40), createdBy: "u-tashi", sharedAt: dt(-38), approvedAt: dt(-33),
       scheduleSnapshot: snap(["m41", "m42"]),
     },
   )
@@ -565,7 +562,7 @@ export function seed(): DB {
   log(undefined, -3, "unknown", "Failed sign-in", "3 failed OTP attempts for priya.patel@novaindustries.com", true)
   log("p5", -55, "u-gulzer", "Approval decided", "Estimate v1 approved (Fresh sign-in + OTP)")
   log("p5", -5, "u-gulzer", "Approval decided", "Revised code of conduct accepted (one-click link)")
-  log("p3", -20, "u-rajiv", "Lifecycle changed", "Active → Paused: Site access for Chakan plant suspended")
+  log("p3", -20, "u-tashi", "Lifecycle changed", "Active → Paused: Site access for Chakan plant suspended")
 
   return db
 }

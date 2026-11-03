@@ -8,7 +8,7 @@ import type { Lifecycle } from "@/lib/domain/types"
 import { ActionButton, ReasonDialog } from "@/components/shared/dialogs"
 import { useAction } from "@/components/shared/use-action"
 
-export function LifecycleControls({ projectId, lifecycle, isOwner, isDirector, cancelRequestedBy, viewerId }: { projectId: string; lifecycle: Lifecycle; isOwner: boolean; isDirector: boolean; cancelRequestedBy?: string; viewerId: string }) {
+export function LifecycleControls({ projectId, lifecycle, isOwner, isDirector, cancelRequestedBy }: { projectId: string; lifecycle: Lifecycle; isOwner: boolean; isDirector: boolean; cancelRequestedBy?: string; viewerId?: string }) {
   if (!isDirector) return null
   const done = ["closed", "cancelled", "archived"].includes(lifecycle)
   return (
@@ -20,12 +20,7 @@ export function LifecycleControls({ projectId, lifecycle, isOwner, isDirector, c
       {isOwner && lifecycle === "paused" && <ResumeDialog projectId={projectId} />}
       {isOwner && (lifecycle === "closed" || lifecycle === "cancelled") && <ActionButton variant="ghost" onRun={() => archiveProject(projectId)}>Archive</ActionButton>}
       {isOwner && !done && !cancelRequestedBy && (
-        <ReasonDialog trigger="Request cancellation" variant="ghost" confirmVariant="destructive" title="Request cancellation" description="Another Director must confirm. Open items will close as Withdrawn and the project becomes read-only." confirm="Request cancellation" onSubmit={(r) => lifecycleAction(projectId, "request_cancel", r)} />
-      )}
-      {cancelRequestedBy && cancelRequestedBy !== viewerId && !done && (
-        <ActionButton variant="destructive" onRun={() => lifecycleAction(projectId, "confirm_cancel", "")}>
-          Confirm cancellation
-        </ActionButton>
+        <ReasonDialog trigger="Request cancellation" variant="ghost" confirmVariant="destructive" title="Request cancellation" description="An Admin must confirm. Open items will close as Withdrawn and the project becomes read-only." confirm="Request cancellation" onSubmit={(r) => lifecycleAction(projectId, "request_cancel", r)} />
       )}
       {done && <ReasonDialog trigger="Reopen" title="Reopen project" description="Previous closure records are preserved." confirm="Reopen" onSubmit={(r) => reopenProject(projectId, r)} />}
     </div>

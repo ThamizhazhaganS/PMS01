@@ -79,7 +79,7 @@ export default async function People({ params }: { params: Promise<{ projectId: 
                   </td>
                   <td className="py-2.5 pr-3 text-xs">{m.role.replace("_", " ")}<div className="text-muted-foreground">{m.preset}</div></td>
                   <td className="py-2.5 pr-3"><WorkstreamChips projectId={projectId} userId={user.id} all={ws} mine={m.role === "owner" ? ws.map((w) => w.id) : m.workstreamIds} editable={manage && m.role !== "owner"} /></td>
-                  <td className="py-2.5 pr-3">{m.role === "team" ? <PublishRightSwitch projectId={projectId} userId={user.id} value={m.publishRight} editable={manage} /> : <span className="text-xs text-muted-foreground">{m.publishRight ? "Yes (Director)" : "—"}</span>}</td>
+                  <td className="py-2.5 pr-3">{m.role === "team" ? <PublishRightSwitch projectId={projectId} userId={user.id} value={m.publishRight} editable={manage} /> : <span className="text-xs text-muted-foreground">{m.publishRight ? "Yes (CEO)" : "—"}</span>}</td>
                   <td className="py-2.5 text-right">
                     <div className="flex justify-end gap-1.5">
                       {canViewAs(ctx) && !isStaffKind(user.kind) && (

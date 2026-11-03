@@ -70,7 +70,7 @@ export const MILESTONE_LABEL: Record<MilestoneState, string> = {
 
 export const ROLE_LABEL: Record<UserKind, string> = {
   admin: "Admin",
-  director: "Director",
+  director: "CEO",
   team: "Team Member",
   exec: "Executive Director",
   client_lead: "Client Lead",

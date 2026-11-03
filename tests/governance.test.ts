@@ -6,6 +6,7 @@ import { approvals, decisions, documents, publications, visibleAttachments, acti
 import * as effects from "@/lib/effects"
 import {
   addComment,
+  adminConfirmCancel,
   advanceChange,
   advanceEstimate,
   changeMilestoneDate,
@@ -231,10 +232,17 @@ describe("T-24 lifecycle rules", () => {
     refused(await lifecycleAction("p1", "resume", ""), /Confirm/)
     ok(await lifecycleAction("p1", "resume", "confirmed"))
 
+    as("u-admin")
+    refused(await adminConfirmCancel("p1"), /No cancellation/) // nothing requested yet
+    as("u-sanjeev")
+    refused(await lifecycleAction("p1", "request_cancel", "Team member trying to cancel."), /Owner/)
+    as("u-tashi")
+    refused(await adminConfirmCancel("p1"), /Admins only/) // the CEO cannot confirm their own request
     ok(await lifecycleAction("p1", "request_cancel", "Client strategy changed this quarter."))
-    refused(await lifecycleAction("p1", "confirm_cancel", ""), /different Director/)
-    as("u-rajiv")
-    ok(await lifecycleAction("p1", "confirm_cancel", ""))
+    expect(db().projects.find((p) => p.id === "p1")!.lifecycle).toBe("active")
+    expect(notesTo("u-admin").some((n) => n.title.includes("needs Admin confirmation"))).toBe(true)
+    as("u-admin")
+    ok(await adminConfirmCancel("p1"))
     expect(db().projects.find((p) => p.id === "p1")!.lifecycle).toBe("cancelled")
     expect(db().approvals.filter((a) => a.projectId === "p1" && a.state === "pending")).toHaveLength(0)
 

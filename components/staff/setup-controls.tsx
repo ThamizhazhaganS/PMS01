@@ -63,7 +63,7 @@ export function AddMemberDialog({ projectId, candidates, workstreams }: { projec
   const cand = candidates.find((c) => c.id === userId)
   const roles: { value: ProjectRole; label: string }[] =
     cand?.side === "staff"
-      ? cand.kind === "director" ? [{ value: "director", label: "Director" }, { value: "team", label: "Team Member" }] : [{ value: "team", label: "Team Member" }]
+      ? cand.kind === "director" ? [{ value: "director", label: "CEO" }, { value: "team", label: "Team Member" }] : [{ value: "team", label: "Team Member" }]
       : [{ value: "client_stakeholder", label: "Client Stakeholder" }, { value: "client_lead", label: "Client Lead" }]
   const [role, setRole] = useState<ProjectRole>(roles[0]?.value ?? "team")
   const { pending, run } = useAction()

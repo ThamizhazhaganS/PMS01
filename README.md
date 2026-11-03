@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Use the **Dev bar** at the top to switch between test users, open the simulated email **Outbox**, toggle light/dark, or reset the demo data.
+Open http://localhost:3000. The CEO lands on a dashboard (organisations → projects); Team Members land on their project list. Cancelling a project is requested by the CEO and confirmed by the Admin. Use the **Dev bar** at the top to switch between test users, open the simulated email **Outbox**, toggle light/dark, or reset the demo data.
 
 Tier A approvals ask for a one-time code — in this dev build it is `123456`.
 
@@ -20,14 +20,13 @@ Tier A approvals ask for a one-time code — in this dev build it is `123456`.
 | Role | Name | Lands on |
 | --- | --- | --- |
 | Admin | Shrenik (admin login) | `/admin` — accounts only, no project content |
-| Director (Owner) | Tashi | `/w` — Morphoverse workspace |
+| CEO (Owner) | Tashi | `/w` — CEO dashboard → organisations → projects |
 | Team Member (publish right) | Sanjeev | `/w` |
 | Team Member (no publish right) | Shrenik (team login) | `/w` |
 | Team Member (publish right on P1) | Priyanka | `/w` |
 | Executive Director | Rohit Gera | `/exec` — portfolio + Needs attention |
 | Client Lead | Gulzer | `/portal` |
 | Client Stakeholder (HR) | Diva | `/portal` |
-| *More:* Second Director | Rajiv Menon | `/w` (owns P3 and the Helix project) |
 | *More:* Stakeholder (IT) | Arjun Nair | `/portal` |
 | *More:* Other client org | Emma Brooks (Helix Retail) | `/portal` |
 
@@ -47,7 +46,7 @@ The seeded **P5 Supplier Code of Conduct Review** is ready to close: as Tashi, o
 
 ## Creating a project
 
-Directors use **New project** on `/w` (they own what they create); Administrators use **New project** on `/admin` and pick a Director as owner, without gaining access themselves. New projects start in **Setup** with the 8 default phases and a generated ID (`NOVA-2027-001`). Add milestones on **Plan**, members and workstreams on **People & Access**, draft the estimate on **Commercial**, then share it to move to **Proposal**. Once the client approves, the project is **Active** and its baselines freeze; after that, new milestones need an approved change request.
+The CEO uses **New project** on `/w` (and owns what they create); the Admin uses **New project** on `/admin` and picks the CEO as owner, without gaining access themselves. New projects start in **Setup** with the 8 default phases and a generated ID (`NOVA-2027-001`). Add milestones on **Plan**, members and workstreams on **People & Access**, draft the estimate on **Commercial**, then share it to move to **Proposal**. Once the client approves, the project is **Active** and its baselines freeze; after that, new milestones need an approved change request.
 
 ## Search
 

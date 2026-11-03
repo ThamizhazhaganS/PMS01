@@ -25,7 +25,7 @@ describe("REQ-SRC-01 audience-safe search", () => {
 
   it("never reveals Named items, not even their titles (T-05)", () => {
     expect(hits("u-rohit", "compensation")).toHaveLength(0)
-    expect(hits("u-rajiv", "compensation")).toHaveLength(0)
+    expect(hits("u-shrenik-team", "compensation")).toHaveLength(0)
     expect(kinds("u-gulzer", "compensation")).toContain("Document")
   })
 
@@ -57,28 +57,28 @@ const input = (over: Partial<NewProjectInput> = {}): NewProjectInput => ({
 const created = () => db().projects.at(-1)!
 
 describe("REQ-PRJ-01 creating a project", () => {
-  it("Directors create and own projects in Setup with 8 phases and a generated ID", async () => {
+  it("The CEO creates and owns projects in Setup with 8 phases and a generated ID", async () => {
     as("u-sanjeev")
-    refused(await createProject(input()), /Director or Admin/)
+    refused(await createProject(input()), /CEO or Admin/)
     as("u-tashi")
-    const r = ok(await createProject(input({ ownerId: "u-rajiv" })))
+    const r = ok(await createProject(input({ ownerId: "u-sanjeev" }))) // ignored: the creating CEO owns it
     const p = created()
     expect(r.id).toBe(p.id)
     expect(p.code).toBe("NOVA-2027-001")
     expect(p.lifecycle).toBe("setup")
-    expect(p.ownerId).toBe("u-tashi") // a Director creating a project owns it
+    expect(p.ownerId).toBe("u-tashi") // the CEO creating a project owns it
     expect(db().phases.filter((x) => x.projectId === p.id)).toHaveLength(8)
     expect(shell("u-sanjeev", p.id)).not.toBeNull()
     expect(shell("u-gulzer", p.id)).toBeNull() // clients see nothing in Setup (T-03)
     expect(shell("u-rohit", p.id)).toBeNull()
   })
 
-  it("Administrators create the shell for a Director without gaining access", async () => {
+  it("Admins create the shell for the CEO without gaining access", async () => {
     as("u-admin")
-    refused(await createProject(input({ ownerId: "u-sanjeev" })), /Director/)
-    ok(await createProject(input({ ownerId: "u-rajiv" })))
+    refused(await createProject(input({ ownerId: "u-sanjeev" })), /CEO/)
+    ok(await createProject(input({ ownerId: "u-tashi" })))
     const p = created()
-    expect(p.ownerId).toBe("u-rajiv")
+    expect(p.ownerId).toBe("u-tashi")
     expect(shell("u-admin", p.id)).toBeNull()
   })
 

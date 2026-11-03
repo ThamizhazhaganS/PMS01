@@ -118,7 +118,7 @@ export async function setDigest(enabled: boolean): Promise<Result> {
 export async function postStatus(projectId: string, input: { text: string; health: Health; explanation: string; nextSteps: string }) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director can write the status statement.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO can write the status statement.")
     if (input.text.trim().length < MIN_REASON) return fail("Write a status statement.")
     if (input.health !== "on_track" && input.explanation.trim().length < MIN_REASON)
       return fail("At Risk and Delayed need an explanation.")
@@ -184,7 +184,7 @@ export async function milestoneTransition(projectId: string, milestoneId: string
     }
     // accepted
     if (m.acceptance === "client") return fail("Client-acceptance milestones can only be accepted by the designated client approver (T-23).")
-    if (!isProjectDirector(ctx)) return fail("Only a Director accepts internal milestones.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO accepts internal milestones.")
     if (m.state !== "ready_for_review") return fail("Mark it ready for review first.")
     m.state = "accepted"
     m.acceptedAt = nowIso()
@@ -419,7 +419,7 @@ export async function setDocumentAudience(projectId: string, docId: string, audi
 export async function retractDocument(projectId: string, docId: string, reason: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director can retract.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO can retract.")
     const doc = db().documents.find((x) => x.id === docId && x.projectId === projectId)
     if (!doc) return fail("Not found.")
     if (reason.trim().length < MIN_REASON) return fail("A reason is required.")
@@ -452,7 +452,7 @@ export async function savePublication(projectId: string, input: PublicationInput
     if (input.title.trim().length < 3) return fail("Title is required.")
     if (input.kind === "meeting" && !input.meetingAt) return fail("Meeting date and time are required.")
     if (publish) {
-      if (!canPublish(ctx)) return fail("You don't have the publish right. Save as Draft and ask a Director to publish.")
+      if (!canPublish(ctx)) return fail("You don't have the publish right. Save as Draft and ask the CEO to publish.")
       if (!input.audience || input.audience.kind === "draft") return fail("Choose an audience — there is no default.")
       if (!confirmed) return fail("Confirm the recipients before publishing.")
     }
@@ -548,7 +548,7 @@ export async function revisePublication(projectId: string, pubId: string, summar
 export async function retractPublication(projectId: string, pubId: string, reason: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director can retract.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO can retract.")
     const p = db().publications.find((x) => x.id === pubId && x.projectId === projectId)
     if (!p) return fail("Not found.")
     if (reason.trim().length < MIN_REASON) return fail("A reason is required.")
@@ -739,7 +739,7 @@ export async function advanceChange(projectId: string, crId: string, op: "send_f
 export async function newEstimateVersion(projectId: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director drafts estimates.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO drafts estimates.")
     const d = db()
     const latest = d.estimates.filter((e) => e.projectId === projectId).sort((a, b) => b.version - a.version)[0]
     if (latest && latest.state === "draft") return fail(`v${latest.version} is already a draft — edit it.`)
@@ -753,7 +753,7 @@ export async function newEstimateVersion(projectId: string) {
 export async function updateEstimate(projectId: string, id: string, patch: { scope: string; effortDays: number; durationWeeks: number; expenses: number; taxRate: number; lineItems: LineItem[]; detailLevel: "line_items" | "total"; internalNotes: string; costPerDay: number; targetMarginPct: number; validUntil: string }) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director edits estimates.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO edits estimates.")
     const e = db().estimates.find((x) => x.id === id && x.projectId === projectId)
     if (!e) return fail("Not found.")
     if (e.state !== "draft") return fail("Shared or reviewed versions are immutable — create a new version.")
@@ -767,7 +767,7 @@ export async function updateEstimate(projectId: string, id: string, patch: { sco
 export async function advanceEstimate(projectId: string, id: string, op: "review" | "share" | "withdraw") {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director can share an estimate.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO can share an estimate.")
     const d = db()
     const e = d.estimates.find((x) => x.id === id && x.projectId === projectId)
     if (!e) return fail("Not found.")
@@ -882,7 +882,7 @@ export async function decideAccess(projectId: string, requestId: string, grant: 
 }
 
 // ── Lifecycle ───────────────────────────────────────────────────────────────
-export async function lifecycleAction(projectId: string, op: "pause" | "resume" | "request_cancel" | "confirm_cancel", reason: string) {
+export async function lifecycleAction(projectId: string, op: "pause" | "resume" | "request_cancel", reason: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
     const p = ctx.project
@@ -906,24 +906,35 @@ export async function lifecycleAction(projectId: string, op: "pause" | "resume" 
       notify({ userIds: projectUserIds(projectId), tier: 1, title: `${p.name} resumed`, projectId, exclude: ctx.user.id })
       return ok("Resumed.")
     }
-    if (op === "request_cancel") {
-      if (!isOwner(ctx)) return fail("Only the Owner can request cancellation.")
-      if (reason.trim().length < MIN_REASON) return fail("A reason is required.")
-      p.cancelRequest = { reason: reason.trim(), at: nowIso(), by: ctx.user.id }
-      audit(ctx.user.id, "Cancellation requested", reason, projectId)
-      notify({ userIds: directors(projectId), tier: 1, title: `Cancellation of ${p.name} needs a second Director`, projectId, exclude: ctx.user.id })
-      return ok("Cancellation requested — another Director must confirm.")
-    }
-    if (!p.cancelRequest) return fail("No cancellation requested.")
-    if (!isProjectDirector(ctx) || p.cancelRequest.by === ctx.user.id) return fail("A different Director must confirm.")
+    // request_cancel: the owner asks; an Admin confirms from the Admin console (adminConfirmCancel).
+    if (!isOwner(ctx)) return fail("Only the Owner can request cancellation.")
+    if (p.cancelRequest) return fail("Cancellation is already waiting for Admin confirmation.")
+    if (reason.trim().length < MIN_REASON) return fail("A reason is required.")
+    p.cancelRequest = { reason: reason.trim(), at: nowIso(), by: ctx.user.id }
+    audit(ctx.user.id, "Cancellation requested", reason, projectId)
+    notify({ userIds: db().users.filter((u) => u.kind === "admin").map((u) => u.id), tier: 1, title: `Cancellation of ${p.code} needs Admin confirmation`, projectId: undefined })
+    return ok("Cancellation requested — an Admin must confirm.")
+  })
+}
+
+/**
+ * Second-person check for cancellation. With a single CEO, the Admin confirms.
+ * Uses only the project shell (name, state, the CEO's reason) — never project content.
+ */
+export async function adminConfirmCancel(projectId: string) {
+  return guard(async () => {
+    const admin = await requireAdmin()
     const d = db()
+    const p = d.projects.find((x) => x.id === projectId)
+    if (!p || !p.cancelRequest) return fail("No cancellation is waiting for confirmation.")
+    if (["closed", "cancelled", "archived"].includes(p.lifecycle)) return fail("This project is already finished.")
     p.lifecycle = "cancelled"
     d.approvals.filter((a) => a.projectId === projectId && a.state === "pending").forEach((a) => (a.state = "withdrawn"))
     d.changeRequests.filter((c) => c.projectId === projectId && !["implemented", "declined", "withdrawn"].includes(c.state)).forEach((c) => (c.state = "withdrawn"))
     d.actions.filter((a) => a.projectId === projectId && a.state === "open").forEach((a) => (a.state = "cancelled"))
-    audit(ctx.user.id, "Lifecycle changed", `→ Cancelled (confirmed). Reason: ${p.cancelRequest.reason}`, projectId)
-    notify({ userIds: projectUserIds(projectId), tier: 1, title: `${p.name} cancelled`, projectId, exclude: ctx.user.id })
-    return ok("Project cancelled. Open items withdrawn; project is read-only.")
+    audit(admin.id, "Lifecycle changed", `→ Cancelled (confirmed by Admin ${admin.name}). Reason: ${p.cancelRequest.reason}`, projectId, true)
+    notify({ userIds: projectUserIds(projectId), tier: 1, title: `${p.name} cancelled`, projectId })
+    return ok("Project cancelled. Open items withdrawn; the project is read-only.")
   })
 }
 
@@ -931,7 +942,7 @@ export async function reopenProject(projectId: string, reason: string) {
   const user = await getViewer()
   if (!user) return fail("No session")
   const ctx = ctxFor(user, projectId)
-  if (!ctx || !isProjectDirector(ctx)) return fail("Only a Director can reopen.")
+  if (!ctx || !isProjectDirector(ctx)) return fail("Only the CEO can reopen.")
   if (!["closed", "archived", "cancelled"].includes(ctx.project.lifecycle)) return fail("Not closed.")
   if (reason.trim().length < MIN_REASON) return fail("A reason is required.")
   const from = ctx.project.lifecycle
@@ -975,7 +986,7 @@ export async function startClosing(projectId: string) {
 export async function setClosureItem(projectId: string, key: ClosureKey, state: "met" | "waived" | "pending", reason = "") {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director manages the closure checklist.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO manages the closure checklist.")
     const p = ctx.project
     const c = p.closure
     if (p.lifecycle !== "closing" || !c || c.finalizedAt) return fail("The closure record is not open.")
@@ -1095,16 +1106,16 @@ export interface NewProjectInput {
 export async function createProject(input: NewProjectInput): Promise<Result> {
   return guard(async () => {
     const actor = await getViewer()
-    if (!actor || (actor.kind !== "director" && actor.kind !== "admin")) return fail("Only a Director or Admin can create a project.")
+    if (!actor || (actor.kind !== "director" && actor.kind !== "admin")) return fail("Only the CEO or Admin can create a project.")
     const d = db()
     const org = d.orgs.find((o) => o.id === input.clientOrgId && o.kind === "client")
     if (!org) return fail("Choose a client organisation.")
     if (input.name.trim().length < 3) return fail("Give the project a name.")
     if (input.objectives.trim().length < 10 || input.scope.trim().length < 10) return fail("Objectives and scope summary are required.")
-    // A project owner is always a Morphoverse Director (A-02); a Director creating a project owns it.
+    // A project owner is always a Morphoverse CEO (A-02); the CEO creating a project owns it.
     const ownerId = actor.kind === "director" ? actor.id : input.ownerId
     const owner = d.users.find((u) => u.id === ownerId && u.kind === "director" && u.status === "active")
-    if (!owner) return fail("The owner must be an active Morphoverse Director.")
+    if (!owner) return fail("The owner must be an active Morphoverse CEO.")
     if (!input.plannedStart || !input.targetEnd || input.targetEnd <= input.plannedStart) return fail("Target end must be after the planned start.")
     const wsNames = [...new Set(input.workstreams.map((w) => w.trim()).filter(Boolean))]
     if (wsNames.length === 0) return fail("Add at least one workstream.")
@@ -1166,7 +1177,7 @@ export async function addMember(projectId: string, userId: string, role: Members
     if (role === "owner") return fail("A project has one owner.")
     const staffRole = role === "director" || role === "team"
     if (staffRole && !(u.kind === "director" || u.kind === "team")) return fail("Only Morphoverse staff can hold a staff role.")
-    if (staffRole && role === "director" && u.kind !== "director") return fail("Only Directors can join as Director.")
+    if (staffRole && role === "director" && u.kind !== "director") return fail("Only the CEO can join as CEO.")
     if (!staffRole && (u.orgId !== ctx.project.clientOrgId || u.kind === "exec")) return fail("Client members must belong to this project's client organisation.")
     const valid = workstreamIds.filter((w) => d.workstreams.some((x) => x.id === w && x.projectId === projectId))
     d.memberships.push({ projectId, userId, role, workstreamIds: valid, publishRight: role === "director", manageAccess: false, preset: role === "client_lead" ? "Approver" : staffRole ? "Collaborator" : "Workstream contributor" })
@@ -1180,7 +1191,7 @@ export async function addMember(projectId: string, userId: string, role: Members
 export async function addMilestone(projectId: string, input: { name: string; phaseId: string; workstreamId?: string; ownerId: string; counterpartId?: string; acceptance: "client" | "internal"; criteria: string; date: string; changeRequestId?: string }) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!isProjectDirector(ctx)) return fail("Only a Director adds milestones.")
+    if (!isProjectDirector(ctx)) return fail("Only the CEO adds milestones.")
     const d = db()
     if (input.name.trim().length < 3) return fail("Name the milestone.")
     if (!d.phases.some((p) => p.id === input.phaseId && p.projectId === projectId)) return fail("Choose a phase.")
@@ -1275,6 +1286,6 @@ export async function adminSelfGrant(projectId: string) {
     d.memberships.push({ projectId, userId: admin.id, role: "team", workstreamIds: [], publishRight: false, manageAccess: false, preset: "View only", selfGranted: true })
     audit(admin.id, "SECURITY: admin self-grant", `${admin.name} granted themselves View-only access to ${p.code}`, projectId, true)
     notify({ userIds: directors(projectId), tier: 1, title: `Security alert: ${admin.name} self-granted access to ${p.name}`, projectId, path: "/history" })
-    return ok("Self-grant recorded. Directors have been alerted.")
+    return ok("Self-grant recorded. The CEO has been alerted.")
   })
 }

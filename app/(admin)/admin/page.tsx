@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/page-ctx"
 import { ROLE_LABEL, LIFECYCLE_LABEL } from "@/lib/domain/rules"
 import { Pill } from "@/components/shared/badges"
 import { PageTitle, Section } from "@/components/shared/ui"
-import { InviteDialog, OrgDialog, SelfGrantButton, UserStatusButton } from "@/components/admin/admin-controls"
+import { ConfirmCancelButton, InviteDialog, OrgDialog, SelfGrantButton, UserStatusButton } from "@/components/admin/admin-controls"
+import { userName } from "@/lib/data"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 
@@ -12,7 +13,7 @@ export default async function Admin() {
   const admin = await requireUser(["admin"])
   const d = db()
   const orgs = d.orgs
-  const projects = d.projects.map((p) => ({ id: p.id, name: p.name, code: p.code, orgId: p.clientOrgId, lifecycle: p.lifecycle, workstreams: d.workstreams.filter((w) => w.projectId === p.id).map((w) => ({ id: w.id, name: w.name })) }))
+  const projects = d.projects.map((p) => ({ id: p.id, name: p.name, code: p.code, orgId: p.clientOrgId, lifecycle: p.lifecycle, cancelRequest: ["cancelled", "closed", "archived"].includes(p.lifecycle) ? undefined : p.cancelRequest, workstreams: d.workstreams.filter((w) => w.projectId === p.id).map((w) => ({ id: w.id, name: w.name })) }))
   return (
     <>
       <PageTitle eyebrow="Morphoverse · Platform" title="Organisations & users" action={<div className="flex flex-wrap gap-2"><OrgDialog /><Link href="/admin/projects/new" className={buttonVariants({ size: "sm", variant: "outline" })}>New project</Link><InviteDialog orgs={orgs} projects={projects} /></div>}>
@@ -41,11 +42,19 @@ export default async function Admin() {
                   <div className="text-sm font-medium">{p.name}</div>
                   <div className="text-xs text-muted-foreground">{p.code} · {orgs.find((o) => o.id === p.orgId)?.name} · {LIFECYCLE_LABEL[p.lifecycle]}</div>
                 </div>
-                <SelfGrantButton projectId={p.id} granted={d.memberships.some((m) => m.projectId === p.id && m.userId === admin.id)} />
+                <div className="flex flex-wrap items-center gap-2">
+                  {p.cancelRequest && <ConfirmCancelButton projectId={p.id} />}
+                  <SelfGrantButton projectId={p.id} granted={d.memberships.some((m) => m.projectId === p.id && m.userId === admin.id)} />
+                </div>
+                {p.cancelRequest && (
+                  <p className="w-full rounded-md bg-bad-soft p-2 text-xs">
+                    <b>Cancellation requested</b> by {userName(p.cancelRequest.by)}: “{p.cancelRequest.reason}” — your confirmation is the second check.
+                  </p>
+                )}
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-muted-foreground">Self-granting access is logged as a security event and alerts the project&apos;s Directors immediately.</p>
+          <p className="mt-3 text-xs text-muted-foreground">Self-granting access is logged as a security event and alerts the project&apos;s CEO immediately.</p>
         </Section>
       </div>
 
