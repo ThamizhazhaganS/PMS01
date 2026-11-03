@@ -123,6 +123,20 @@ export function seed(): DB {
         pause: { reason: "Site access for Chakan plant suspended during annual maintenance shutdown.", at: dt(-20), by: "u-rajiv" },
       },
       {
+        id: "p5",
+        code: "NOVA-2026-004",
+        name: "Supplier Code of Conduct Review",
+        clientOrgId: "org-nova",
+        ownerId: "u-sarah",
+        lifecycle: "active",
+        objectives: "Refresh Nova's supplier code of conduct and onboarding checks.",
+        scope: "Benchmark, revised code, supplier onboarding checklist.",
+        timezone: "Asia/Kolkata",
+        currency: "INR",
+        plannedStart: d(-55),
+        targetEnd: d(-2),
+      },
+      {
         id: "p4",
         code: "HLX-2026-001",
         name: "Store Network Expansion Review",
@@ -143,6 +157,7 @@ export function seed(): DB {
       { id: "ws-p2", projectId: "p2", name: "Procurement" },
       { id: "ws-p3", projectId: "p3", name: "Plant Safety" },
       { id: "ws-p4", projectId: "p4", name: "Network Planning" },
+      { id: "ws-p5", projectId: "p5", name: "Supplier Governance" },
     ],
     memberships: [
       member("p1", "u-sarah", "owner", ["ws-hr", "ws-it"]),
@@ -159,6 +174,9 @@ export function seed(): DB {
       member("p3", "u-maya", "team", ["ws-p3"]),
       member("p3", "u-jordan", "client_lead", ["ws-p3"]),
       member("p3", "u-priya", "client_stakeholder", ["ws-p3"]),
+      member("p5", "u-sarah", "owner", ["ws-p5"]),
+      member("p5", "u-david", "team", ["ws-p5"], { publishRight: true }),
+      member("p5", "u-jordan", "client_lead", ["ws-p5"]),
       member("p4", "u-rajiv", "owner", ["ws-p4"]),
       member("p4", "u-emma", "client_lead", ["ws-p4"]),
     ],
@@ -202,6 +220,15 @@ export function seed(): DB {
         at: dt(-21, 10),
       },
       {
+        id: "st-5",
+        projectId: "p5",
+        text: "Revised supplier code accepted by Jordan. Remaining work is handover.",
+        health: "on_track",
+        nextSteps: "Prepare closure: final pack, handover of the onboarding checklist.",
+        authorId: "u-sarah",
+        at: dt(-4, 11),
+      },
+      {
         id: "st-4",
         projectId: "p4",
         text: "Catchment analysis complete for 28 of 40 sites.",
@@ -211,7 +238,7 @@ export function seed(): DB {
         at: dt(-3, 16),
       },
     ],
-    phases: [...phasesFor("p1"), ...phasesFor("p2"), ...phasesFor("p3"), ...phasesFor("p4")],
+    phases: [...phasesFor("p1"), ...phasesFor("p2"), ...phasesFor("p3"), ...phasesFor("p4"), ...phasesFor("p5")],
     milestones: [],
     blockers: [],
     actions: [],
@@ -283,6 +310,9 @@ export function seed(): DB {
     m("m31", "p3", 2, "Audit process map", { base: -30, state: "accepted", acceptedAt: dt(-29), ownerId: "u-rajiv", criteria: "As-is audit process for both plants." }),
     m("m32", "p3", 4, "Two-plant digital pilot", { base: 10, state: "in_progress", ownerId: "u-maya", criteria: "Pilot runs for 4 weeks at Chakan and Ranjangaon." }),
     // P4 — Helix
+    m("m51", "p5", 2, "Supplier code benchmark", { base: -30, state: "accepted", acceptedAt: dt(-29), criteria: "Benchmark against 5 peers.", ownerId: "u-david" }),
+    m("m52", "p5", 7, "Revised code of conduct", { base: -6, state: "accepted", acceptedAt: dt(-5), criteria: "Approved by Nova legal and procurement.", ownerId: "u-sarah" }),
+    m("m53", "p5", 8, "Onboarding checklist handover", { base: -3, acceptance: "internal", state: "accepted", acceptedAt: dt(-3), ownerId: "u-david" }),
     m("m41", "p4", 2, "Catchment analysis", { base: 5, state: "in_progress", ownerId: "u-rajiv", criteria: "All 40 sites analysed." }),
     m("m42", "p4", 7, "Board recommendation", { base: 45, ownerId: "u-rajiv", criteria: "Board accepts ranked shortlist." }),
   )
@@ -319,6 +349,7 @@ export function seed(): DB {
     { id: "a2", projectId: "p1", description: "Confirm the December steering committee date", ownerId: "u-jordan", due: d(4), source: { kind: "publication", id: "pub1", label: "Steering Committee #2" }, state: "open", audience: CLIENT, authorId: "u-sarah", createdAt: dt(-8) },
     { id: "a3", projectId: "p1", description: "Draft role-mapping template for HR", ownerId: "u-maya", due: d(1), source: { kind: "manual", label: "Team planning" }, state: "open", audience: TEAM, authorId: "u-david", createdAt: dt(-9) },
     { id: "a4", projectId: "p1", description: "Provide IT asset inventory export (CMDB extract)", ownerId: "u-arjun", due: d(-3), source: { kind: "manual", label: "Blocker B-1" }, state: "open", audience: ws("ws-it"), authorId: "u-david", createdAt: dt(-12) },
+    { id: "a6", projectId: "p5", description: "Hand over onboarding checklist template to Nova procurement", ownerId: "u-david", due: d(1), source: { kind: "manual", label: "Closure prep" }, state: "open", audience: CLIENT, authorId: "u-sarah", createdAt: dt(-3) },
     { id: "a5", projectId: "p1", description: "Circulate interview schedule for IT leads", ownerId: "u-david", source: { kind: "manual", label: "Team planning" }, state: "done", audience: TEAM, authorId: "u-david", createdAt: dt(-30) },
   )
 
@@ -337,6 +368,7 @@ export function seed(): DB {
     { id: "doc8", projectId: "p1", title: "ITSM vendor shortlist", kind: "reference", phaseId: "p1-ph4", audience: ws("ws-it"), authorId: "u-david", publishedAt: dt(-6), versions: [v(1, "ITSM_shortlist.pdf", 760, "Shortlist of 3 vendors.", -6)] },
     { id: "doc9", projectId: "p1", title: "Old org chart (retracted)", kind: "reference", phaseId: "p1-ph2", audience: CLIENT, authorId: "u-david", publishedAt: dt(-40), retracted: { reason: "Contained personal data of employees on leave; replaced by anonymised chart in the assessment report.", at: dt(-39), by: "u-sarah" }, versions: [v(1, "OrgChart.pdf", 300, "Initial.", -40)] },
     { id: "doc21", projectId: "p2", title: "Procurement proposal deck", kind: "reference", audience: CLIENT, authorId: "u-sarah", publishedAt: dt(-6), versions: [v(1, "Procurement_Proposal.pdf", 1900, "Proposal deck v1.", -6, "u-sarah")] },
+    { id: "doc51", projectId: "p5", title: "Supplier Code of Conduct v2", kind: "deliverable", audience: CLIENT, authorId: "u-sarah", publishedAt: dt(-6), versions: [v(1, "Supplier_Code_v2.pdf", 1300, "Revised code for approval.", -6, "u-sarah")] },
     { id: "doc41", projectId: "p4", title: "Helix catchment interim findings", kind: "deliverable", audience: CLIENT, authorId: "u-rajiv", publishedAt: dt(-3), versions: [v(1, "Helix_catchment_interim.pdf", 2200, "Interim.", -3, "u-rajiv")] },
   )
 
@@ -469,6 +501,17 @@ export function seed(): DB {
       scheduleSnapshot: snap(["m31", "m32"]),
     },
     {
+      id: "est5", projectId: "p5", version: 1, state: "approved",
+      scope: "Supplier code refresh.", deliverables: ["Benchmark", "Revised code", "Onboarding checklist"],
+      effortDays: 40, durationWeeks: 8,
+      lineItems: [{ id: "li1", label: "Blended team", qty: 40, unit: "days", rate: 85000 }],
+      expenses: 60000, taxRate: 18, assumptions: [], exclusions: ["Supplier audits"],
+      validUntil: d(-40), detailLevel: "line_items",
+      internal: { costPerDay: 40000, targetMarginPct: 40, notes: "" },
+      createdAt: dt(-60), createdBy: "u-sarah", sharedAt: dt(-58), approvedAt: dt(-55),
+      scheduleSnapshot: snap(["m51", "m52", "m53"]),
+    },
+    {
       id: "est4", projectId: "p4", version: 1, state: "approved",
       scope: "Store network expansion review.", deliverables: ["Catchment analysis", "Site scoring model", "Board recommendation"],
       effortDays: 70, durationWeeks: 11,
@@ -516,6 +559,8 @@ export function seed(): DB {
   log("p1", -1, "u-alex", "Access requested", "Executive compensation benchmarks (Named) — reason recorded")
   log(undefined, -14, "u-admin", "User invited", "arjun.nair@novaindustries.com invited with preset 'Workstream contributor'", true)
   log(undefined, -3, "unknown", "Failed sign-in", "3 failed OTP attempts for priya.patel@novaindustries.com", true)
+  log("p5", -55, "u-jordan", "Approval decided", "Estimate v1 approved (Fresh sign-in + OTP)")
+  log("p5", -5, "u-jordan", "Approval decided", "Revised code of conduct accepted (one-click link)")
   log("p3", -20, "u-rajiv", "Lifecycle changed", "Active → Paused: Site access for Chakan plant suspended")
 
   return db

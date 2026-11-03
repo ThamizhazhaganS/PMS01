@@ -23,6 +23,22 @@ export const DEFAULT_PHASES = [
 ] as const
 
 export const STALE_DAYS = 14
+
+export const CLOSURE_ITEMS = [
+  ["deliverables", "All client deliverables accepted"],
+  ["final_docs", "Final documents published"],
+  ["feedback", "Client feedback recorded"],
+  ["actions", "Open actions resolved or transferred"],
+  ["final_status", "Final status statement written"],
+] as const
+
+export const SURVEY_QUESTIONS = [
+  ["overall", "Overall satisfaction"],
+  ["usefulness", "Usefulness of deliverables"],
+  ["clarity", "Clarity of communication"],
+  ["timeline", "Keeping to the timeline"],
+  ["responsiveness", "Responsiveness"],
+] as const
 export const DEV_OTP = "123456"
 export const MIN_REASON = 10
 

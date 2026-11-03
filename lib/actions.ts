@@ -12,11 +12,13 @@ import type {
   Audience,
   BlockerType,
   ChangeCategory,
+  ClosureKey,
   DateLinkKind,
   Health,
   ImpactReview,
   LineItem,
   Publication,
+  Survey,
   User,
   UserKind,
 } from "@/lib/domain/types"
@@ -34,7 +36,7 @@ import {
   isProjectDirector,
   isProjectStaff,
 } from "@/lib/access/audience"
-import { DEV_OTP, MIN_REASON, fmtDate, todayIso } from "@/lib/domain/rules"
+import { CLOSURE_ITEMS, DEV_OTP, MIN_REASON, fmtDate, todayIso } from "@/lib/domain/rules"
 
 export type Result = { ok: true; message?: string } | { ok: false; error: string }
 const ok = (message?: string): Result => ({ ok: true, message })
@@ -313,6 +315,8 @@ function applyApprovalOutcome(ctx: AccessCtx, approvalId: string) {
       d.decisions.push({ id: newId("dec"), projectId: project.id, statement: `Estimate v${e.version} approved`, context: ap.title, partyIds: ap.responses.map((r) => r.userId), date: todayIso(), state: "active", audience: { kind: "client" }, authorId: ctx.user.id })
     } else if (ap.state === "declined") e.state = "declined"
   }
+  if (s.kind === "final")
+    audit("system", "Final acceptance", `Final acceptance ${ap.state.replace("_", " ")}${ap.state === "approved" ? " — Owner can finalise closure once the checklist is complete" : " — project stays in Closing"}`, project.id)
   if (s.kind === "change_request") {
     const c = d.changeRequests.find((x) => x.id === s.id)!
     if (ap.state === "approved") c.state = "approved"
@@ -932,9 +936,145 @@ export async function reopenProject(projectId: string, reason: string) {
   const from = ctx.project.lifecycle
   ctx.project.lifecycle = "active"
   ctx.project.cancelRequest = undefined
+  if (ctx.project.closure) {
+    ctx.project.previousClosures = [...(ctx.project.previousClosures ?? []), ctx.project.closure]
+    ctx.project.closure = undefined
+  }
   audit(user.id, "Lifecycle changed", `${from} → Active (reopened): ${reason}`, projectId)
   revalidatePath("/", "layout")
   return ok("Reopened.")
+}
+
+// ── Closure (REQ-CLS-01…05) ─────────────────────────────────────────────────
+const OPEN_CR = (state: string) => !["implemented", "declined", "withdrawn"].includes(state)
+
+export async function startClosing(projectId: string) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isOwner(ctx)) return fail("Only the project Owner can start closure.")
+    const p = ctx.project
+    if (p.lifecycle !== "active") return fail("Only active projects can move to Closing.")
+    const d = db()
+    const open = d.milestones.filter((m) => m.projectId === projectId && m.state !== "accepted" && m.state !== "dropped")
+    if (open.length) return fail(`${open.length} milestone(s) are not yet Accepted or Dropped.`)
+    if (d.changeRequests.some((c) => c.projectId === projectId && OPEN_CR(c.state))) return fail("Resolve all open change requests first.")
+    p.lifecycle = "closing"
+    p.closure = {
+      startedAt: nowIso(),
+      startedBy: ctx.user.id,
+      items: CLOSURE_ITEMS.map(([key, label]) => ({ key, label, state: "pending" as const })),
+    }
+    audit(ctx.user.id, "Lifecycle changed", "Active → Closing. Closure checklist generated", projectId)
+    notify({ userIds: projectUserIds(projectId), tier: 1, title: `${p.name} is closing`, projectId, exclude: ctx.user.id })
+    return ok("Moved to Closing. Work through the checklist.")
+  })
+}
+
+/** Each item can be Met (with a system check where one exists) or Waived with a reason. */
+export async function setClosureItem(projectId: string, key: ClosureKey, state: "met" | "waived" | "pending", reason = "") {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isProjectDirector(ctx)) return fail("Only a Director manages the closure checklist.")
+    const p = ctx.project
+    const c = p.closure
+    if (p.lifecycle !== "closing" || !c || c.finalizedAt) return fail("The closure record is not open.")
+    const item = c.items.find((i) => i.key === key)
+    if (!item) return fail("Not found.")
+    const d = db()
+    if (state === "waived" && reason.trim().length < MIN_REASON) return fail("A waiver needs a recorded reason.")
+    if (state === "met") {
+      if (key === "deliverables" && d.milestones.some((m) => m.projectId === projectId && m.acceptance === "client" && m.state !== "accepted" && m.state !== "dropped"))
+        return fail("Some client deliverables are not accepted.")
+      if (key === "actions" && d.actions.some((a) => a.projectId === projectId && a.state === "open"))
+        return fail("There are still open actions — resolve, cancel or transfer them.")
+      if (key === "feedback" && !c.survey) return fail("The Client Lead has not completed or skipped the feedback survey yet.")
+      if (key === "final_status" && !d.statuses.some((s) => s.projectId === projectId && s.at >= c.startedAt))
+        return fail("Write a final status statement after closure started.")
+    }
+    item.state = state
+    item.waiverReason = state === "waived" ? reason.trim() : undefined
+    item.by = ctx.user.id
+    item.at = nowIso()
+    audit(ctx.user.id, "Closure checklist", `${item.label}: ${state}${state === "waived" ? ` — ${reason}` : ""}`, projectId)
+    return ok(state === "waived" ? "Waived with reason." : state === "met" ? "Marked met." : "Reset to pending.")
+  })
+}
+
+export async function requestFinalAcceptance(projectId: string) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isOwner(ctx)) return fail("Only the project Owner requests final acceptance.")
+    const p = ctx.project
+    if (p.lifecycle !== "closing" || !p.closure) return fail("Start closure first.")
+    const d = db()
+    const existing = d.approvals.find((a) => a.id === p.closure!.finalApprovalId)
+    if (existing && (existing.state === "pending" || existing.state === "approved")) return fail(`Final acceptance is already ${existing.state}.`)
+    const leads = clientLeads(projectId)
+    if (!leads.length) return fail("No Client Lead on this project.")
+    const ap = { id: newId("ap"), projectId, title: `Final acceptance — ${p.name}`, subject: { kind: "final" as const, projectId }, tier: "A" as const, approverIds: leads, rule: "any" as const, due: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10), state: "pending" as const, responses: [], requestedBy: ctx.user.id, createdAt: nowIso() }
+    d.approvals.push(ap)
+    p.closure.finalApprovalId = ap.id
+    audit(ctx.user.id, "Approval requested", `Final acceptance → ${leads.map(userName).join(", ")} (Tier A)`, projectId)
+    notify({ userIds: leads, tier: 1, title: `Final acceptance requested: ${p.name}`, projectId, path: `?approve=${ap.id}` })
+    return ok("Final acceptance requested (Tier A, fresh sign-in).")
+  })
+}
+
+export async function finalizeClosure(projectId: string) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isOwner(ctx)) return fail("Only the project Owner finalises closure.")
+    const p = ctx.project
+    const c = p.closure
+    if (p.lifecycle !== "closing" || !c) return fail("Project is not closing.")
+    const pending = c.items.filter((i) => i.state === "pending")
+    if (pending.length) return fail(`Cannot close: ${pending.length} checklist item(s) still Pending.`)
+    const ap = db().approvals.find((a) => a.id === c.finalApprovalId)
+    if (!ap || ap.state !== "approved") return fail("Final acceptance has not been approved by the client.")
+    c.finalizedAt = nowIso()
+    c.finalizedBy = ctx.user.id
+    p.lifecycle = "closed"
+    audit(ctx.user.id, "Lifecycle changed", "Closing → Closed. Closure record finalised and locked; project is read-only", projectId)
+    notify({ userIds: projectUserIds(projectId), tier: 1, title: `${p.name} is closed`, projectId, exclude: ctx.user.id })
+    return ok("Closed. The closure record is final and the project is now read-only.")
+  })
+}
+
+/** The survey is allowed during Closing and after Closed, so it bypasses the read-only guard. */
+export async function submitSurvey(projectId: string, input: { skip: true } | Omit<Survey, "by" | "at">) {
+  return guard(async () => {
+    const user = await getViewer()
+    if (!user) throw new Refused("Your session has ended.")
+    const ctx = ctxFor(user, projectId)
+    if (!ctx || !hasShell(ctx) || ctx.membership?.role !== "client_lead") return fail("Only the Client Lead completes the closure survey.")
+    const c = ctx.project.closure
+    if (!c) return fail("No open feedback request.")
+    if (c.survey) return ok("Your feedback is already recorded.")
+    if ("skip" in input) {
+      c.survey = { skipped: true, by: user.id, at: nowIso() }
+      audit(user.id, "Feedback skipped", "Closure survey skipped", projectId)
+      return ok("Skipped. Thank you.")
+    }
+    const scores = [input.overall, input.usefulness, input.clarity, input.timeline, input.responsiveness]
+    if (scores.some((n) => !(n >= 1 && n <= 5))) return fail("Rate each question from 1 to 5.")
+    c.survey = { ...input, comments: input.comments.trim(), by: user.id, at: nowIso() }
+    audit(user.id, "Feedback recorded", `Closure survey completed (overall ${input.overall}/5)`, projectId)
+    notify({ userIds: directors(projectId), tier: 2, title: `${user.name} shared closure feedback`, projectId })
+    return ok("Thank you — your feedback is recorded.")
+  })
+}
+
+export async function archiveProject(projectId: string) {
+  const user = await getViewer()
+  if (!user) return fail("No session")
+  const ctx = ctxFor(user, projectId)
+  if (!ctx || !isOwner(ctx)) return fail("Only the project Owner can archive.")
+  if (!["closed", "cancelled"].includes(ctx.project.lifecycle)) return fail("Only closed or cancelled projects can be archived.")
+  const from = ctx.project.lifecycle
+  ctx.project.lifecycle = "archived"
+  audit(user.id, "Lifecycle changed", `${from} → Archived (manual)`, projectId)
+  revalidatePath("/", "layout")
+  return ok("Archived.")
 }
 
 // ── Administrator ───────────────────────────────────────────────────────────

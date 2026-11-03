@@ -8,6 +8,7 @@ import { ApprovalStateBadge, HealthBadge, Pill } from "@/components/shared/badge
 import { NeedsList } from "@/components/shared/needs-list"
 import { Section, Stat } from "@/components/shared/ui"
 import { StatusDialog } from "@/components/staff/status-dialog"
+import { ClosurePanel } from "@/components/staff/closure-panel"
 
 export default async function Overview({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
@@ -20,6 +21,8 @@ export default async function Overview({ params }: { params: Promise<{ projectId
   const pending = approvals(ctx).filter((a) => a.state === "pending")
 
   return (
+    <div className="space-y-5">
+    <ClosurePanel ctx={ctx} />
     <div className="grid gap-5 lg:grid-cols-3">
       <div className="space-y-5 lg:col-span-2">
         <Section
@@ -112,6 +115,7 @@ export default async function Overview({ params }: { params: Promise<{ projectId
           )}
         </Section>
       </div>
+    </div>
     </div>
   )
 }

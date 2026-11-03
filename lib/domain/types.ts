@@ -62,6 +62,42 @@ export interface Project {
   targetEnd: ISODate
   pause?: { reason: string; at: ISODateTime; by: string }
   cancelRequest?: { reason: string; at: ISODateTime; by: string }
+  closure?: Closure
+  /** Closure records from earlier cycles, preserved when a project is reopened (REQ-PRJ-06). */
+  previousClosures?: Closure[]
+}
+
+export type ClosureKey = "deliverables" | "final_docs" | "feedback" | "actions" | "final_status"
+
+export interface ClosureItem {
+  key: ClosureKey
+  label: string
+  state: "pending" | "met" | "waived"
+  waiverReason?: string
+  by?: string
+  at?: ISODateTime
+}
+
+export interface Survey {
+  overall: number
+  usefulness: number
+  clarity: number
+  timeline: number
+  responsiveness: number
+  comments: string
+  by: string
+  at: ISODateTime
+}
+
+export interface Closure {
+  startedAt: ISODateTime
+  startedBy: string
+  items: ClosureItem[]
+  finalApprovalId?: string
+  survey?: Survey | { skipped: true; by: string; at: ISODateTime }
+  /** Once set, the closure record is immutable (REQ-CLS-03). */
+  finalizedAt?: ISODateTime
+  finalizedBy?: string
 }
 
 export type ProjectRole = "owner" | "director" | "team" | "client_lead" | "client_stakeholder"
@@ -243,6 +279,7 @@ export type ApprovalSubject =
   | { kind: "milestone"; id: string }
   | { kind: "document"; id: string; version: number }
   | { kind: "change_request"; id: string }
+  | { kind: "final"; projectId: string }
 
 export interface ApprovalResponse {
   userId: string

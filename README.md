@@ -32,6 +32,18 @@ Tier A approvals ask for a one-time code — in this dev build it is `123456`.
 
 Seed projects: **P1** HR & IT Operating Model Redesign (Active), **P2** Procurement Cost Optimisation (Proposal), **P3** Plant Safety Digital Audit (Paused), **P4** Helix Store Network Expansion (other organisation).
 
+## Tests
+
+```bash
+npm test
+```
+
+Vitest runs the permission and governance suite in `tests/` against the real data layer, server actions and file route (Next's `cookies`, `redirect` and `revalidatePath` are mocked). Each `describe` is named after the PRD acceptance scenario it covers (T-01…T-27, except T-28, which is a usability test with people).
+
+## Closing a project
+
+The seeded **P5 Supplier Code of Conduct Review** is ready to close: as Sarah, open it and click **Start closing**, work through the checklist, then request final acceptance. As Jordan, give feedback and approve with code `123456`. Back as Sarah, click **Close project**.
+
 ## How access is enforced
 
 All data lives on the server (`lib/store.ts`). Pages and server actions read only through `lib/data.ts`, which filters every collection with the pure rules in `lib/access/audience.ts` (5-tier audience: Draft, Team, Workstream, Named, Client-wide). Unauthorised and non-existent items both return 404. File downloads (`/api/files/[docId]`) re-check access on every request. The UI never acts as the control.

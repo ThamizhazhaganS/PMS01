@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, CircleHelp, ListTodo, Stamp } from "lucide-react"
+import { CheckCircle2, CircleHelp, ListTodo, MessageSquareHeart, Stamp } from "lucide-react"
 import type { NeedsItem } from "@/lib/data"
 import { answerClarification, setActionState } from "@/lib/actions"
 import { fmtDate } from "@/lib/domain/rules"
@@ -8,8 +8,9 @@ import { ApprovalDialog } from "./approval-dialog"
 import { ActionButton, ReasonDialog } from "./dialogs"
 import { Pill } from "./badges"
 import { cn } from "@/lib/utils"
+import { SurveyDialog } from "@/components/client/survey-dialog"
 
-const ICON = { approval: Stamp, action: ListTodo, clarification: CircleHelp }
+const ICON = { approval: Stamp, action: ListTodo, clarification: CircleHelp, survey: MessageSquareHeart }
 
 /** One list, one primary button per item (UX-02). */
 export function NeedsList({ items, showProject, openId, emptyText = "Nothing needs you right now." }: { items: NeedsItem[]; showProject?: boolean; openId?: string; emptyText?: string }) {
@@ -46,6 +47,7 @@ export function NeedsList({ items, showProject, openId, emptyText = "Nothing nee
                   Mark done
                 </ActionButton>
               )}
+              {n.kind === "survey" && <SurveyDialog projectId={n.projectId} projectName={n.projectName} />}
               {n.kind === "clarification" && (
                 <ReasonDialog
                   trigger="Answer"

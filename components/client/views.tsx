@@ -41,8 +41,20 @@ export function clientSections(ctx: AccessCtx) {
 export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: AccessCtx; readOnly?: boolean; openApproval?: string; base: string }) {
   const s = summary(ctx)
   const needs = needsYou(ctx.user, ctx.project.id)
+  const closure = ctx.project.closure
   return (
     <div className="grid gap-5 lg:grid-cols-5">
+      {closure && (
+        <section className="rounded-xl border border-brand/30 bg-brand-soft/50 p-4 lg:col-span-5" aria-label="Closure">
+          <p className="font-medium">
+            {closure.finalizedAt ? `This engagement closed on ${fmtDate(closure.finalizedAt)}.` : "This engagement is in its closing phase."}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Closure checklist: {closure.items.filter((i) => i.state !== "pending").length} of {closure.items.length} complete
+            {closure.finalizedAt ? " · records are kept read-only." : " · Morphoverse will ask for final acceptance once everything is in place."}
+          </p>
+        </section>
+      )}
       <section className="rounded-2xl border bg-card p-5 sm:p-7 lg:col-span-3" aria-labelledby="status-h">
         <div className="eyebrow" id="status-h">Where the project stands</div>
         <div className="mt-3 flex flex-wrap items-center gap-2">

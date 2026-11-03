@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { lifecycleAction, reopenProject } from "@/lib/actions"
+import { archiveProject, lifecycleAction, reopenProject, startClosing } from "@/lib/actions"
 import type { Lifecycle } from "@/lib/domain/types"
 import { ActionButton, ReasonDialog } from "@/components/shared/dialogs"
 import { useAction } from "@/components/shared/use-action"
@@ -16,7 +16,9 @@ export function LifecycleControls({ projectId, lifecycle, isOwner, isDirector, c
       {isOwner && lifecycle === "active" && (
         <ReasonDialog trigger="Pause" title="Pause this project" description="Due dates will be flagged paused and overdue alerts suspended. All members are notified." confirm="Pause project" onSubmit={(r) => lifecycleAction(projectId, "pause", r)} />
       )}
+      {isOwner && lifecycle === "active" && <ActionButton onRun={() => startClosing(projectId)}>Start closing</ActionButton>}
       {isOwner && lifecycle === "paused" && <ResumeDialog projectId={projectId} />}
+      {isOwner && (lifecycle === "closed" || lifecycle === "cancelled") && <ActionButton variant="ghost" onRun={() => archiveProject(projectId)}>Archive</ActionButton>}
       {isOwner && !done && !cancelRequestedBy && (
         <ReasonDialog trigger="Request cancellation" variant="ghost" confirmVariant="destructive" title="Request cancellation" description="Another Director must confirm. Open items will close as Withdrawn and the project becomes read-only." confirm="Request cancellation" onSubmit={(r) => lifecycleAction(projectId, "request_cancel", r)} />
       )}

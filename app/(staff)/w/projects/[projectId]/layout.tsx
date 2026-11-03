@@ -47,6 +47,11 @@ export default async function ProjectLayout({ children, params }: { children: Re
           </div>
         </div>
       )}
+      {["closed", "cancelled", "archived"].includes(p.lifecycle) && (
+        <div className="mb-4 rounded-lg border bg-muted p-3 text-sm">
+          <b>Read-only.</b> This project is {p.lifecycle}. Records are retained and cannot be changed; a Director can reopen it with a reason.
+        </div>
+      )}
       {p.cancelRequest && p.lifecycle !== "cancelled" && (
         <div className="mb-4 flex gap-3 rounded-lg border border-bad/30 bg-bad-soft p-3 text-sm">
           <OctagonAlert className="mt-0.5 size-4 shrink-0 text-bad" />

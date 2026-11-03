@@ -151,6 +151,7 @@ export function approvals(ctx: AccessCtx): ApprovalRequest[] {
       if (s.kind === "estimate") return canSeeCommercial(ctx) && !!estimates(ctx).find((e) => e.id === s.id)
       if (s.kind === "milestone") return !!milestones(ctx).find((m) => m.id === s.id)
       if (s.kind === "change_request") return !!changeRequests(ctx).find((c) => c.id === s.id) && canSeeCommercial(ctx)
+      if (s.kind === "final") return canSeeCommercial(ctx)
       return false
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -197,7 +198,7 @@ export function accessRequests(ctx: AccessCtx) {
 // ── Needs You (REQ-NTF-06, UX-02) ───────────────────────────────────────────
 export interface NeedsItem {
   id: string
-  kind: "approval" | "action" | "clarification"
+  kind: "approval" | "action" | "clarification" | "survey"
   title: string
   detail: string
   due?: string
@@ -266,6 +267,18 @@ export function approvalView(ctx: AccessCtx, a: ApprovalRequest): ApprovalView {
     }
     if (a.tier === "A") notice = "Record of agreement only; not a contract or payment authorization."
   }
+  if (s.kind === "final") {
+    const p = d.projects.find((x) => x.id === s.projectId)!
+    const pr = progress(d.milestones.filter((m) => m.projectId === p.id))
+    const est = d.estimates.find((e) => e.projectId === p.id && e.state === "approved")
+    details.push(
+      { label: "Project", value: p.name },
+      { label: "Milestones", value: `${pr.accepted} of ${pr.total} accepted` },
+      { label: "Checklist", value: p.closure ? p.closure.items.map((i) => `${i.label}: ${i.state}`).join(" · ") : "—" },
+    )
+    if (est) details.push({ label: "Agreed cost", value: fmtINR(estimateTotals(est).total) })
+    notice = "Final acceptance records agreement that the engagement is complete; not a contract or payment authorization."
+  }
   if (s.kind === "document") {
     const doc = d.documents.find((x) => x.id === s.id)
     if (doc) details.push({ label: "Document", value: `${doc.title} v${s.version}` })
@@ -320,6 +333,12 @@ export function needsYou(user: User, projectId?: string): NeedsItem[] {
           id: c.id, kind: "clarification", title: `Clarify CR-${c.number}: ${c.what}`, detail: c.clarification?.question ?? "",
           href: `${base}/${p.id}/decisions?cr=${c.id}`, cta: "Answer", projectId: p.id, projectName: p.name,
         })
+    const c = p.closure
+    if (c && !c.survey && ctx.membership?.role === "client_lead")
+      out.push({
+        id: `survey-${p.id}`, kind: "survey", title: `How did ${p.name} go?`, detail: "Short closure feedback · about a minute",
+        href: `${base}/${p.id}`, cta: "Give feedback", projectId: p.id, projectName: p.name,
+      })
   }
   return out.sort((a, b) => Number(!!b.overdue) - Number(!!a.overdue) || (a.due ?? "9").localeCompare(b.due ?? "9"))
 }
