@@ -25,12 +25,14 @@ import {
 import { estimateTotals, fmtDate, fmtINR, isOverdue, isStale, nextMilestone, progress } from "@/lib/domain/rules"
 
 export const USER_COOKIE = "pp_user"
-export const DEFAULT_USER = "u-sarah"
+export const DEFAULT_USER = "u-tashi"
 
 // ── Viewer ──────────────────────────────────────────────────────────────────
 export async function getViewerId() {
   const c = await cookies()
-  return c.get(USER_COOKIE)?.value ?? DEFAULT_USER
+  const id = c.get(USER_COOKIE)?.value
+  // An ID that no longer exists (e.g. a renamed demo user) falls back to the default user.
+  return id && db().users.some((u) => u.id === id) ? id : DEFAULT_USER
 }
 
 /** Returns the signed-in user, or null when the account is deactivated (session ended). */

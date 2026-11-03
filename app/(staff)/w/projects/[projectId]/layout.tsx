@@ -1,4 +1,5 @@
-import { CirclePause, OctagonAlert } from "lucide-react"
+import Link from "next/link"
+import { ChevronRight, CirclePause, OctagonAlert } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
 import { orgById, statuses, userName } from "@/lib/data"
 import { isOwner, isProjectDirector } from "@/lib/access/audience"
@@ -14,6 +15,13 @@ export default async function ProjectLayout({ children, params }: { children: Re
   const st = statuses(ctx)[0]
   return (
     <div>
+      <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+        <Link href="/w" className="hover:text-foreground">Dashboard</Link>
+        <ChevronRight className="size-3.5" aria-hidden />
+        <Link href={`/w/orgs/${p.clientOrgId}`} className="hover:text-foreground">{orgById(p.clientOrgId)?.name}</Link>
+        <ChevronRight className="size-3.5" aria-hidden />
+        <span className="text-foreground">{p.code}</span>
+      </nav>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="eyebrow">

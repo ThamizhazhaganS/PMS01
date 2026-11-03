@@ -3,7 +3,7 @@ import { db } from "@/lib/store"
 import { ctxFor, projectCtx } from "@/lib/data"
 import type { Result } from "@/lib/actions"
 
-export const session: { userId: string | null } = { userId: "u-sarah" }
+export const session: { userId: string | null } = { userId: "u-tashi" }
 
 /** Act as a seeded test user for the following server-action calls. */
 export function as(userId: string) {

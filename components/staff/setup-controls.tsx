@@ -76,7 +76,7 @@ export function AddMemberDialog({ projectId, candidates, workstreams }: { projec
           <DialogDescription>Membership reveals only the project shell. Workstreams decide what they can read. The grant is logged.</DialogDescription>
         </DialogHeader>
         {candidates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Everyone eligible is already a member. Ask an Administrator to invite new users.</p>
+          <p className="text-sm text-muted-foreground">Everyone eligible is already a member. Ask an Admin to invite new users.</p>
         ) : (
           <div className="grid gap-3">
             <Field label="Person">

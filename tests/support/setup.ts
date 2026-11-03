@@ -25,5 +25,5 @@ vi.mock("next/navigation", () => ({
 
 beforeEach(() => {
   resetDb()
-  session.userId = "u-sarah"
+  session.userId = "u-tashi"
 })

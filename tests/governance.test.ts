@@ -34,9 +34,9 @@ const meeting = (over: Partial<PublicationInput> = {}): PublicationInput => ({
   title: "Steering Committee #3",
   meetingAt: "2026-10-01T15:30",
   summary: "Reviewed the HR TOM draft.",
-  attendeeIds: ["u-sarah", "u-jordan"],
+  attendeeIds: ["u-tashi", "u-gulzer"],
   decisions: ["Finance assessment scoped via CR-2"],
-  actions: [{ description: "Circulate revised RACI", ownerId: "u-jordan" }],
+  actions: [{ description: "Circulate revised RACI", ownerId: "u-gulzer" }],
   teamRemarks: "INTERNAL: CFO is sceptical.",
   attachments: [],
   newFiles: [],
@@ -50,14 +50,14 @@ describe("T-13 meeting records keep the real meeting date", () => {
     ok(await savePublication("p1", meeting(), true, true))
     const pub = db().publications.find((p) => p.title === "Steering Committee #3")!
     expect(pub.meetingAt).toBe("2026-10-01T10:00:00.000Z")
-    const order = publications(raw("u-sarah", "p1")).map((p) => p.id)
+    const order = publications(raw("u-tashi", "p1")).map((p) => p.id)
     expect(order.indexOf(pub.id)).toBeGreaterThan(order.indexOf("pub1")) // older meeting sorts after newer ones
   })
 
   it("publishing needs an explicit audience, a confirmation and the publish right", async () => {
     refused(await savePublication("p1", meeting({ audience: null }), true, true), /audience/)
     refused(await savePublication("p1", meeting(), true, false), /Confirm/)
-    as("u-maya")
+    as("u-shrenik-team")
     refused(await savePublication("p1", meeting(), true, true), /publish right/)
     ok(await savePublication("p1", meeting(), false, false)) // a draft is fine
   })
@@ -73,21 +73,21 @@ describe("T-14 attachments publish individually", () => {
       ],
     }), true, true))
     const pub = db().publications.find((p) => p.title === "Steering Committee #3")!
-    const seen = visibleAttachments(raw("u-jordan", "p1"), pub).map((a) => a.documentId)
+    const seen = visibleAttachments(raw("u-gulzer", "p1"), pub).map((a) => a.documentId)
     expect(seen).toEqual(["doc8"])
-    expect(publications(raw("u-jordan", "p1")).find((p) => p.id === pub.id)!.teamRemarks).toBeUndefined()
+    expect(publications(raw("u-gulzer", "p1")).find((p) => p.id === pub.id)!.teamRemarks).toBeUndefined()
   })
 })
 
 describe("T-15 corrections never edit a published record", () => {
   it("a correction request leaves v1 intact until a revision supersedes it", async () => {
     const before = db().publications.find((p) => p.id === "pub1")!.summary
-    as("u-jordan")
-    ok(await addComment("p1", { kind: "publication", id: "pub1" }, "Alex did not attend.", "shared", "correction"))
+    as("u-gulzer")
+    ok(await addComment("p1", { kind: "publication", id: "pub1" }, "Rohit did not attend.", "shared", "correction"))
     expect(db().publications.find((p) => p.id === "pub1")!.summary).toBe(before)
 
-    as("u-sarah")
-    ok(await revisePublication("p1", "pub1", "Corrected attendee list.", "Removed Alex from attendees"))
+    as("u-tashi")
+    ok(await revisePublication("p1", "pub1", "Corrected attendee list.", "Removed Rohit from attendees"))
     const v1 = db().publications.find((p) => p.id === "pub1")!
     const v2 = db().publications.find((p) => p.supersedesId === "pub1")!
     expect(v1.summary).toBe(before)
@@ -100,20 +100,20 @@ describe("T-16 meeting decisions and actions feed the registers", () => {
   it("creates decisions and actions with back-links to the source", async () => {
     ok(await savePublication("p1", meeting(), true, true))
     const pub = db().publications.find((p) => p.title === "Steering Committee #3")!
-    const dec = decisions(raw("u-jordan", "p1")).find((d) => d.sourcePublicationId === pub.id)
-    const act = visibleActions(raw("u-jordan", "p1")).find((a) => a.source?.id === pub.id)
+    const dec = decisions(raw("u-gulzer", "p1")).find((d) => d.sourcePublicationId === pub.id)
+    const act = visibleActions(raw("u-gulzer", "p1")).find((a) => a.source?.id === pub.id)
     expect(dec?.statement).toBe("Finance assessment scoped via CR-2")
-    expect(act?.ownerId).toBe("u-jordan")
+    expect(act?.ownerId).toBe("u-gulzer")
   })
 })
 
 describe("T-17 retraction", () => {
   it("blocks downloads, keeps a notice and records history", async () => {
     ok(await retractDocument("p1", "doc1", "Superseded by the revised assessment pack."))
-    as("u-jordan")
+    as("u-gulzer")
     const res = await download(new Request("http://test/api/files/doc1"), { params: Promise.resolve({ docId: "doc1" }) })
     expect(res.status).toBe(404)
-    const doc = documents(raw("u-jordan", "p1")).find((d) => d.id === "doc1")!
+    const doc = documents(raw("u-gulzer", "p1")).find((d) => d.id === "doc1")!
     expect("retracted" in doc && doc.retracted).toBeTruthy()
     expect(db().audit.some((a) => a.action === "Retracted" && a.detail.includes("Current-State"))).toBe(true)
   })
@@ -141,9 +141,9 @@ describe("T-18 approvals bind to one version", () => {
 
 describe("T-19 only designated approvers decide; Tier A needs fresh sign-in", () => {
   it("refuses non-designated users and missing OTP, accepts the designated approver", async () => {
-    as("u-priya")
+    as("u-diva")
     refused(await decideApproval("p1", "ap1", "approve", ""), /designated/)
-    as("u-jordan")
+    as("u-gulzer")
     refused(await decideApproval("p2", "ap2", "approve", ""), /verification/)
     ok(await decideApproval("p2", "ap2", "approve", "", OTP))
     expect(ap("ap2").responses[0].method).toMatch(/OTP/)
@@ -153,7 +153,7 @@ describe("T-19 only designated approvers decide; Tier A needs fresh sign-in", ()
   })
 
   it("is idempotent on double submit", async () => {
-    as("u-jordan")
+    as("u-gulzer")
     ok(await decideApproval("p1", "ap1", "approve", ""))
     ok(await decideApproval("p1", "ap1", "approve", ""))
     expect(ap("ap1").responses).toHaveLength(1)
@@ -161,15 +161,15 @@ describe("T-19 only designated approvers decide; Tier A needs fresh sign-in", ()
   })
 
   it("Request changes and Decline need a comment", async () => {
-    as("u-jordan")
+    as("u-gulzer")
     refused(await decideApproval("p1", "ap1", "changes", ""), /comment/)
   })
 })
 
 describe("T-20 viewing, downloading or commenting is never approval", () => {
   it("leaves the approval pending", async () => {
-    as("u-jordan")
-    approvals(raw("u-jordan", "p1"))
+    as("u-gulzer")
+    approvals(raw("u-gulzer", "p1"))
     await download(new Request("http://test/api/files/doc2"), { params: Promise.resolve({ docId: "doc2" }) })
     ok(await addComment("p1", { kind: "publication", id: "pub3" }, "Looks good to me!", "shared"))
     expect(ap("ap1").state).toBe("pending")
@@ -191,9 +191,9 @@ describe("T-21 change discipline", () => {
     refused(await advanceChange("p1", "cr2", "implement"), /approved/)
     expect(ms("m7").currentDate).toBe(current)
 
-    as("u-jordan")
+    as("u-gulzer")
     ok(await decideApproval("p1", "ap4", "approve", "", OTP))
-    as("u-sarah")
+    as("u-tashi")
     ok(await advanceChange("p1", "cr2", "implement"))
     expect(ms("m7").baselineDate).toBe(baseline)
     expect(ms("m7").currentDate).not.toBe(current)
@@ -214,12 +214,12 @@ describe("T-22 no silent date shifts", () => {
 describe("T-23 Ready for review is not Accepted", () => {
   it("staff cannot accept a client milestone, and need the publish right to request it", async () => {
     refused(await milestoneTransition("p1", "m4", "accepted"), /client approver/)
-    as("u-maya")
+    as("u-shrenik-team")
     ok(await milestoneTransition("p1", "m6", "in_progress"))
-    refused(await milestoneTransition("p1", "m6", "ready_for_review", ["u-priya"]), /publish right/)
-    as("u-david")
+    refused(await milestoneTransition("p1", "m6", "ready_for_review", ["u-diva"]), /publish right/)
+    as("u-sanjeev")
     refused(await milestoneTransition("p1", "m6", "ready_for_review", ["u-arjun"]), /approver/) // Arjun can't see an HR milestone
-    ok(await milestoneTransition("p1", "m6", "ready_for_review", ["u-priya"]))
+    ok(await milestoneTransition("p1", "m6", "ready_for_review", ["u-diva"]))
     expect(ms("m6").state).toBe("ready_for_review")
   })
 })
@@ -238,7 +238,7 @@ describe("T-24 lifecycle rules", () => {
     expect(db().projects.find((p) => p.id === "p1")!.lifecycle).toBe("cancelled")
     expect(db().approvals.filter((a) => a.projectId === "p1" && a.state === "pending")).toHaveLength(0)
 
-    as("u-sarah")
+    as("u-tashi")
     refused(await postStatus("p1", { text: "Should not be allowed now.", health: "on_track", explanation: "", nextSteps: "" }), /read-only/)
     refused(await reopenProject("p1", ""), /reason/)
     ok(await reopenProject("p1", "Client reinstated the programme."))
@@ -247,16 +247,16 @@ describe("T-24 lifecycle rules", () => {
 
 describe("T-26 notification tiers", () => {
   it("Tier 1 always emails; Tier 2 respects the digest switch; restricted items stay quiet", async () => {
-    as("u-jordan")
+    as("u-gulzer")
     ok(await setDigest(false))
-    as("u-sarah")
+    as("u-tashi")
     ok(await changeMilestoneDate("p1", "m7", "2027-01-15", "Steering committee asked to align with board.", "team_adjustment"))
     ok(await postStatus("p1", { text: "Routine weekly update for the team.", health: "on_track", explanation: "", nextSteps: "" }))
 
-    expect(emailsTo("u-jordan").filter((e) => e.tier === 1 && e.status === "sent").length).toBeGreaterThan(0)
-    expect(emailsTo("u-jordan").filter((e) => e.tier === 2)).toHaveLength(0)
-    expect(notesTo("u-jordan").some((n) => n.tier === 2)).toBe(true) // still in-app
-    expect(emailsTo("u-priya").some((e) => e.tier === 2 && e.status === "queued_digest")).toBe(true)
+    expect(emailsTo("u-gulzer").filter((e) => e.tier === 1 && e.status === "sent").length).toBeGreaterThan(0)
+    expect(emailsTo("u-gulzer").filter((e) => e.tier === 2)).toHaveLength(0)
+    expect(notesTo("u-gulzer").some((n) => n.tier === 2)).toBe(true) // still in-app
+    expect(emailsTo("u-diva").some((e) => e.tier === 2 && e.status === "queued_digest")).toBe(true)
     expect(emailsTo("u-emma")).toHaveLength(0)
   })
 })
@@ -264,10 +264,10 @@ describe("T-26 notification tiers", () => {
 describe("T-27 append-only activity log", () => {
   it("records grants, transitions, date changes and approvals; nothing can edit it", async () => {
     const start = db().audit.length
-    ok(await toggleWorkstream("p1", "u-priya", "ws-it"))
+    ok(await toggleWorkstream("p1", "u-diva", "ws-it"))
     ok(await changeMilestoneDate("p1", "m7", "2027-01-20", "Board calendar confirmed by Nova.", "team_adjustment"))
     ok(await lifecycleAction("p1", "pause", "Short pause for holiday shutdown."))
-    as("u-jordan")
+    as("u-gulzer")
     ok(await decideApproval("p1", "ap1", "approve", ""))
     const added = db().audit.slice(start).map((a) => a.action)
     expect(added).toEqual(expect.arrayContaining(["Access granted", "Date changed", "Lifecycle changed", "Approval decided"]))

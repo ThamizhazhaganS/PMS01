@@ -1095,7 +1095,7 @@ export interface NewProjectInput {
 export async function createProject(input: NewProjectInput): Promise<Result> {
   return guard(async () => {
     const actor = await getViewer()
-    if (!actor || (actor.kind !== "director" && actor.kind !== "admin")) return fail("Only a Director or Administrator can create a project.")
+    if (!actor || (actor.kind !== "director" && actor.kind !== "admin")) return fail("Only a Director or Admin can create a project.")
     const d = db()
     const org = d.orgs.find((o) => o.id === input.clientOrgId && o.kind === "client")
     if (!org) return fail("Choose a client organisation.")
@@ -1220,7 +1220,7 @@ export async function createOrganisation(name: string, code: string) {
 // ── Administrator ───────────────────────────────────────────────────────────
 async function requireAdmin() {
   const u = await getViewer()
-  if (!u || u.kind !== "admin") throw new Refused("Administrators only.")
+  if (!u || u.kind !== "admin") throw new Refused("Admins only.")
   return u
 }
 

@@ -11,9 +11,9 @@ const status = { text: "All deliverables accepted; handing over.", health: "on_t
 describe("starting closure", () => {
   it("needs every milestone accepted and no open change requests", async () => {
     refused(await startClosing("p1"), /milestone/)
-    as("u-david")
+    as("u-sanjeev")
     refused(await startClosing("p5"), /Owner/)
-    as("u-sarah")
+    as("u-tashi")
     ok(await startClosing("p5"))
     expect(p5().lifecycle).toBe("closing")
     expect(p5().closure!.items.map((i) => i.state)).toEqual(Array(5).fill("pending"))
@@ -37,13 +37,13 @@ describe("T-25 closing a project", () => {
     ok(await setClosureItem("p5", "final_docs", "waived", "Final pack delivered by email at the client's request."))
 
     refused(await setClosureItem("p5", "feedback", "met"), /survey/)
-    expect(needsYou(user("u-jordan"), "p5").map((n) => n.kind)).toContain("survey")
-    as("u-priya")
+    expect(needsYou(user("u-gulzer"), "p5").map((n) => n.kind)).toContain("survey")
+    as("u-diva")
     refused(await submitSurvey("p5", { skip: true }), /Client Lead/)
-    as("u-jordan")
+    as("u-gulzer")
     refused(await submitSurvey("p5", { overall: 6, usefulness: 4, clarity: 4, timeline: 4, responsiveness: 4, comments: "" }), /1 to 5/)
     ok(await submitSurvey("p5", { overall: 5, usefulness: 4, clarity: 5, timeline: 4, responsiveness: 5, comments: "Great team." }))
-    as("u-sarah")
+    as("u-tashi")
     ok(await setClosureItem("p5", "feedback", "met"))
 
     // Checklist done, but no final acceptance yet
@@ -51,11 +51,11 @@ describe("T-25 closing a project", () => {
     ok(await requestFinalAcceptance("p5"))
     const final = db().approvals.find((a) => a.id === p5().closure!.finalApprovalId)!
     expect(final.tier).toBe("A")
-    as("u-jordan")
+    as("u-gulzer")
     refused(await decideApproval("p5", final.id, "approve", ""), /verification/)
     ok(await decideApproval("p5", final.id, "approve", "Accepted.", "123456"))
 
-    as("u-sarah")
+    as("u-tashi")
     ok(await finalizeClosure("p5"))
     expect(p5().lifecycle).toBe("closed")
     expect(p5().closure!.finalizedAt).toBeTruthy()

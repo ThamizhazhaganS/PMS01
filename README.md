@@ -19,13 +19,14 @@ Tier A approvals ask for a one-time code — in this dev build it is `123456`.
 
 | Role | Name | Lands on |
 | --- | --- | --- |
-| Administrator | John Carter | `/admin` — accounts only, no project content |
-| Director (Owner) | Sarah Mitchell | `/w` — Morphoverse workspace |
-| Team Member (publish right) | David Chen | `/w` |
-| Executive Director | Alex Mercer | `/exec` — portfolio + Needs attention |
-| Client Lead | Jordan Lee | `/portal` |
-| Client Stakeholder (HR) | Priya Patel | `/portal` |
-| *More:* Team Member, no publish right | Maya Rao | `/w` |
+| Admin | Shrenik (admin login) | `/admin` — accounts only, no project content |
+| Director (Owner) | Tashi | `/w` — Morphoverse workspace |
+| Team Member (publish right) | Sanjeev | `/w` |
+| Team Member (no publish right) | Shrenik (team login) | `/w` |
+| Team Member (publish right on P1) | Priyanka | `/w` |
+| Executive Director | Rohit Gera | `/exec` — portfolio + Needs attention |
+| Client Lead | Gulzer | `/portal` |
+| Client Stakeholder (HR) | Diva | `/portal` |
 | *More:* Second Director | Rajiv Menon | `/w` (owns P3 and the Helix project) |
 | *More:* Stakeholder (IT) | Arjun Nair | `/portal` |
 | *More:* Other client org | Emma Brooks (Helix Retail) | `/portal` |
@@ -42,7 +43,7 @@ Vitest runs the permission and governance suite in `tests/` against the real dat
 
 ## Closing a project
 
-The seeded **P5 Supplier Code of Conduct Review** is ready to close: as Sarah, open it and click **Start closing**, work through the checklist, then request final acceptance. As Jordan, give feedback and approve with code `123456`. Back as Sarah, click **Close project**.
+The seeded **P5 Supplier Code of Conduct Review** is ready to close: as Tashi, open it and click **Start closing**, work through the checklist, then request final acceptance. As Gulzer, give feedback and approve with code `123456`. Back as Tashi, click **Close project**.
 
 ## Creating a project
 
