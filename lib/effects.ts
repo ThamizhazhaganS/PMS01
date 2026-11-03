@@ -44,7 +44,7 @@ export function notify(opts: {
       userId: u.id,
       tier: opts.tier,
       subject: opts.title,
-      link: `https://pulse.morphoverse.com${href}`,
+      link: `https://ctrlpms.morphoverse.com${href}`,
       at: nowIso(),
       status: opts.tier === 1 ? "sent" : "queued_digest",
     })

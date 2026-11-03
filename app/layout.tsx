@@ -11,7 +11,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const serif = Instrument_Serif({ variable: "--font-serif", subsets: ["latin"], weight: "400", style: ["normal", "italic"] })
 
 export const metadata: Metadata = {
-  title: "PulsePlatform · Morphoverse",
+  title: "CtrlPMS · Morphoverse",
   description: "Client engagement and governance workspace — what was shared, what was agreed, what needs attention.",
 }
 

@@ -9,14 +9,14 @@ import { Search } from "lucide-react"
 
 export function Brand({ sub }: { sub?: string }) {
   return (
-    <Link href="/" className="flex items-center gap-2.5" aria-label="PulsePlatform home">
+    <Link href="/" className="flex items-center gap-2.5" aria-label="CtrlPMS home">
       <span className="relative flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <svg viewBox="0 0 24 24" className="size-4" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 12h4l2-5 4 10 2-5h6" />
         </svg>
       </span>
       <span className="leading-none">
-        <span className="block text-sm font-semibold tracking-tight">PulsePlatform</span>
+        <span className="block text-sm font-semibold tracking-tight">CtrlPMS</span>
         {sub && <span className="block text-[11px] text-muted-foreground">{sub}</span>}
       </span>
     </Link>

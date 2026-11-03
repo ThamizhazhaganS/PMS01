@@ -1,4 +1,4 @@
-# PulsePlatform
+# CtrlPMS
 
 Client engagement and governance workspace for **Morphoverse** engagements with **Nova Industries**: one provable record of what was shared, what was agreed, what needs attention, and what changed.
 

@@ -1,4 +1,4 @@
-// Core domain model for PulsePlatform. Pure types — shared by server and client code.
+// Core domain model for CtrlPMS. Pure types — shared by server and client code.
 
 export type ISODate = string // "2026-11-03" (date only, project timezone)
 export type ISODateTime = string // full ISO timestamp, stored in UTC
