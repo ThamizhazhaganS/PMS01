@@ -1,5 +1,5 @@
 import { AppHeader } from "@/components/shared/app-header"
-import { needsYou } from "@/lib/data"
+import { needsYou, orgById } from "@/lib/data"
 import { requireUser } from "@/lib/page-ctx"
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +18,7 @@ export default async function PortalLayout({ children }: { children: React.React
         ]
   return (
     <>
-      <AppHeader user={user} sub="Nova Industries × Morphoverse" nav={nav} searchAction="/portal/search" />
+      <AppHeader user={user} sub={`${orgById(user.orgId)?.name} × Morphoverse`} nav={nav} searchAction="/portal/search" />
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
     </>
   )

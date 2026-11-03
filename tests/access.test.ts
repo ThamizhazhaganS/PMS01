@@ -27,7 +27,7 @@ describe("T-01 project isolation", () => {
 })
 
 describe("T-02 organisation isolation", () => {
-  it("a Helix user never sees, opens or is notified about Nova projects", async () => {
+  it("a Helix user never sees, opens or is notified about Gera projects", async () => {
     expect(ids(projectsFor(user("u-emma")))).toEqual(["p4"])
     for (const p of ["p1", "p2", "p3", "p5"]) expect(shell("u-emma", p)).toBeNull()
     expect(await fetchFile("u-emma", "doc1")).toBe(404)
@@ -62,7 +62,7 @@ describe("T-04 workstream isolation", () => {
     expect(await fetchFile("u-diva", "doc2")).toBe(200)
 
     as("u-tashi")
-    ok(await changeMilestoneDate("p1", "m5", "2027-01-20", "Vendor workshop moved by Nova IT.", "team_adjustment"))
+    ok(await changeMilestoneDate("p1", "m5", "2027-01-20", "Vendor workshop moved by Gera IT.", "team_adjustment"))
     expect(notesTo("u-arjun").some((n) => n.title.includes("IT systems"))).toBe(true)
     expect(notesTo("u-diva").some((n) => n.title.includes("IT systems"))).toBe(false)
   })
@@ -147,8 +147,8 @@ describe("T-10 Team content never reaches clients", () => {
 describe("T-11 invitations and presets", () => {
   it("an invited user has no access until verified, then only their workstream", async () => {
     as("u-admin")
-    ok(await inviteUser({ name: "Neha Kulkarni", email: "neha.k@novaindustries.com", orgId: "org-nova", kind: "client_stakeholder", projectId: "p1", workstreamId: "ws-hr" }))
-    const neha = db().users.find((u) => u.email === "neha.k@novaindustries.com")!
+    ok(await inviteUser({ name: "Neha Kulkarni", email: "neha.k@geradevelopment.com", orgId: "org-nova", kind: "client_stakeholder", projectId: "p1", workstreamId: "ws-hr" }))
+    const neha = db().users.find((u) => u.email === "neha.k@geradevelopment.com")!
     expect(neha.status).toBe("invited")
     expect(shell(neha.id, "p1")).toBeNull()
 
@@ -156,7 +156,7 @@ describe("T-11 invitations and presets", () => {
     const docs = ids(fullDocs(neha.id, "p1"))
     expect(docs).toContain("doc2")
     expect(docs).not.toContain("doc8")
-    refused(await inviteUser({ name: "Dup", email: "neha.k@novaindustries.com", orgId: "org-nova", kind: "client_stakeholder" }), /exists/)
+    refused(await inviteUser({ name: "Dup", email: "neha.k@geradevelopment.com", orgId: "org-nova", kind: "client_stakeholder" }), /exists/)
   })
 })
 

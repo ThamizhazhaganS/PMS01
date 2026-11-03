@@ -1,6 +1,6 @@
 # CtrlPMS
 
-Client engagement and governance workspace for **Morphoverse** engagements with **Nova Industries**: one provable record of what was shared, what was agreed, what needs attention, and what changed.
+Client engagement and governance workspace for **Morphoverse** engagements with **Gera Development**: one provable record of what was shared, what was agreed, what needs attention, and what changed.
 
 > Stage 1 — interactive frontend on an in-memory server store. No database yet (PostgreSQL + Prisma is Stage 2).
 
@@ -46,7 +46,7 @@ The seeded **P5 Supplier Code of Conduct Review** is ready to close: as Tashi, o
 
 ## Creating a project
 
-The CEO uses **New project** on `/w` (and owns what they create); the Admin uses **New project** on `/admin` and picks the CEO as owner, without gaining access themselves. New projects start in **Setup** with the 8 default phases and a generated ID (`NOVA-2027-001`). Add milestones on **Plan**, members and workstreams on **People & Access**, draft the estimate on **Commercial**, then share it to move to **Proposal**. Once the client approves, the project is **Active** and its baselines freeze; after that, new milestones need an approved change request.
+The CEO uses **New project** on `/w` (and owns what they create); the Admin uses **New project** on `/admin` and picks the CEO as owner, without gaining access themselves. New projects start in **Setup** with the 8 default phases and a generated ID (`GERA-2027-001`). Add milestones on **Plan**, members and workstreams on **People & Access**, draft the estimate on **Commercial**, then share it to move to **Proposal**. Once the client approves, the project is **Active** and its baselines freeze; after that, new milestones need an approved change request.
 
 ## Search
 
@@ -60,7 +60,7 @@ All data lives on the server (`lib/store.ts`). Pages and server actions read onl
 
 ```
 app/(staff)/w/…         Morphoverse workspace (7 project tabs, meeting wizard, View As)
-app/(client)/portal/…   Nova client portal (Home, Needs you, Overview, Journey, Documents, Decisions)
+app/(client)/portal/…   Gera client portal (Home, Needs you, Overview, Journey, Documents, Decisions)
 app/(exec)/exec/…       Executive Director portfolio + Needs attention
 app/(admin)/admin/…     Administrator console + security log
 lib/domain/             Types, derived values, formatting (IST / INR)

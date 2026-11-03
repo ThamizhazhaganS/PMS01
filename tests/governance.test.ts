@@ -273,7 +273,7 @@ describe("T-27 append-only activity log", () => {
   it("records grants, transitions, date changes and approvals; nothing can edit it", async () => {
     const start = db().audit.length
     ok(await toggleWorkstream("p1", "u-diva", "ws-it"))
-    ok(await changeMilestoneDate("p1", "m7", "2027-01-20", "Board calendar confirmed by Nova.", "team_adjustment"))
+    ok(await changeMilestoneDate("p1", "m7", "2027-01-20", "Board calendar confirmed by Gera.", "team_adjustment"))
     ok(await lifecycleAction("p1", "pause", "Short pause for holiday shutdown."))
     as("u-gulzer")
     ok(await decideApproval("p1", "ap1", "approve", ""))

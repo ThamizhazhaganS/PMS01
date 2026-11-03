@@ -62,7 +62,7 @@ export function seed(): DB {
   const db: DB = {
     orgs: [
       { id: "org-morph", name: "Morphoverse", kind: "agency", code: "MV" },
-      { id: "org-nova", name: "Nova Industries", kind: "client", code: "NOVA", primaryContactId: "u-gulzer" },
+      { id: "org-nova", name: "Gera Development", kind: "client", code: "GERA", primaryContactId: "u-gulzer" },
       { id: "org-helix", name: "Helix Retail", kind: "client", code: "HLX", primaryContactId: "u-emma" },
     ],
     users: [
@@ -71,22 +71,22 @@ export function seed(): DB {
       { id: "u-sanjeev", name: "Sanjeev", email: "sanjeev@morphoverse.com", orgId: "org-morph", kind: "team", title: "Team Member", status: "active" },
       { id: "u-shrenik-team", name: "Shrenik", email: "shrenik@morphoverse.com", orgId: "org-morph", kind: "team", title: "Team Member", status: "active" },
       { id: "u-priyanka", name: "Priyanka", email: "priyanka@morphoverse.com", orgId: "org-morph", kind: "team", title: "Team Member", status: "active" },
-      { id: "u-rohit", name: "Rohit Gera", email: "rohit.gera@novaindustries.com", orgId: "org-nova", kind: "exec", title: "Executive Director", status: "active" },
-      { id: "u-gulzer", name: "Gulzer", email: "gulzer@novaindustries.com", orgId: "org-nova", kind: "client_lead", title: "Client Lead", status: "active" },
-      { id: "u-diva", name: "Diva", email: "diva@novaindustries.com", orgId: "org-nova", kind: "client_stakeholder", title: "Client Stakeholder (HR)", status: "active" },
+      { id: "u-rohit", name: "Rohit Gera", email: "rohit.gera@geradevelopment.com", orgId: "org-nova", kind: "exec", title: "Executive Director", status: "active" },
+      { id: "u-gulzer", name: "Gulzer", email: "gulzer@geradevelopment.com", orgId: "org-nova", kind: "client_lead", title: "Client Lead", status: "active" },
+      { id: "u-diva", name: "Diva", email: "diva@geradevelopment.com", orgId: "org-nova", kind: "client_stakeholder", title: "Client Stakeholder (HR)", status: "active" },
       // More test users
-      { id: "u-arjun", name: "Arjun Nair", email: "arjun.nair@novaindustries.com", orgId: "org-nova", kind: "client_stakeholder", title: "IT Infrastructure Lead", status: "active", extra: true },
+      { id: "u-arjun", name: "Arjun Nair", email: "arjun.nair@geradevelopment.com", orgId: "org-nova", kind: "client_stakeholder", title: "IT Infrastructure Lead", status: "active", extra: true },
       { id: "u-emma", name: "Emma Brooks", email: "emma.brooks@helixretail.com", orgId: "org-helix", kind: "client_lead", title: "COO, Helix Retail", status: "active", extra: true },
     ],
     projects: [
       {
         id: "p1",
-        code: "NOVA-2026-001",
+        code: "GERA-2026-001",
         name: "HR & IT Operating Model Redesign",
         clientOrgId: "org-nova",
         ownerId: "u-tashi",
         lifecycle: "active",
-        objectives: "Design a target operating model for HR shared services and IT service management across Nova's three Pune plants.",
+        objectives: "Design a target operating model for HR shared services and IT service management across Gera's three Pune plants.",
         scope: "Current-state assessment, HR target operating model, IT systems blueprint, consolidated recommendations and roadmap.",
         timezone: "Asia/Kolkata",
         currency: "INR",
@@ -95,7 +95,7 @@ export function seed(): DB {
       },
       {
         id: "p2",
-        code: "NOVA-2026-002",
+        code: "GERA-2026-002",
         name: "Procurement Cost Optimisation",
         clientOrgId: "org-nova",
         ownerId: "u-tashi",
@@ -109,7 +109,7 @@ export function seed(): DB {
       },
       {
         id: "p3",
-        code: "NOVA-2026-003",
+        code: "GERA-2026-003",
         name: "Plant Safety Digital Audit",
         clientOrgId: "org-nova",
         ownerId: "u-tashi",
@@ -124,12 +124,12 @@ export function seed(): DB {
       },
       {
         id: "p5",
-        code: "NOVA-2026-004",
+        code: "GERA-2026-004",
         name: "Supplier Code of Conduct Review",
         clientOrgId: "org-nova",
         ownerId: "u-tashi",
         lifecycle: "active",
-        objectives: "Refresh Nova's supplier code of conduct and onboarding checks.",
+        objectives: "Refresh Gera's supplier code of conduct and onboarding checks.",
         scope: "Benchmark, revised code, supplier onboarding checklist.",
         timezone: "Asia/Kolkata",
         currency: "INR",
@@ -185,7 +185,7 @@ export function seed(): DB {
       {
         id: "st-1",
         projectId: "p1",
-        text: "HR operating model is ready for Gulzer's review. IT blueprint is running about ten days behind because the asset inventory export from Nova IT has not arrived yet.",
+        text: "HR operating model is ready for Gulzer's review. IT blueprint is running about ten days behind because the asset inventory export from Gera IT has not arrived yet.",
         health: "at_risk",
         explanation: "IT Systems Blueprint depends on the asset inventory export (blocker B-1). If received this week we can recover most of the slip.",
         nextSteps: "Walk Gulzer through the HR TOM on Thursday; finalise role-mapping workbook; chase IT export.",
@@ -216,7 +216,7 @@ export function seed(): DB {
         text: "Project paused while the Chakan plant is in its maintenance shutdown.",
         health: "delayed",
         explanation: "Site access unavailable; pilot cannot start until the plant reopens.",
-        nextSteps: "Confirm reopening date with Nova facilities.",
+        nextSteps: "Confirm reopening date with Gera facilities.",
         authorId: "u-tashi",
         at: dt(-21, 10),
       },
@@ -297,7 +297,7 @@ export function seed(): DB {
       counterpartId: "u-arjun",
       criteria: "Application map, integration view and ITSM tool recommendation.",
       ownerId: "u-sanjeev",
-      dateChanges: [{ from: d(6), to: d(16), reason: "Asset inventory export from Nova IT not yet received; blueprint cannot be validated without it.", linkKind: "blocker", linkId: "b1", at: dt(-4, 15), by: "u-tashi" }],
+      dateChanges: [{ from: d(6), to: d(16), reason: "Asset inventory export from Gera IT not yet received; blueprint cannot be validated without it.", linkKind: "blocker", linkId: "b1", at: dt(-4, 15), by: "u-tashi" }],
     }),
     m("m6", "p1", 4, "Role-mapping workbook", { base: 18, audience: ws("ws-hr"), counterpartId: "u-diva", criteria: "All 214 HR roles mapped to the new structure.", ownerId: "u-shrenik-team" }),
     m("m7", "p1", 5, "Consolidated recommendations", { base: 32, counterpartId: "u-gulzer", criteria: "Single recommendation pack across HR and IT with business case." }),
@@ -312,7 +312,7 @@ export function seed(): DB {
     m("m32", "p3", 4, "Two-plant digital pilot", { base: 10, state: "in_progress", ownerId: "u-shrenik-team", criteria: "Pilot runs for 4 weeks at Chakan and Ranjangaon." }),
     // P4 — Helix
     m("m51", "p5", 2, "Supplier code benchmark", { base: -30, state: "accepted", acceptedAt: dt(-29), criteria: "Benchmark against 5 peers.", ownerId: "u-sanjeev" }),
-    m("m52", "p5", 7, "Revised code of conduct", { base: -6, state: "accepted", acceptedAt: dt(-5), criteria: "Approved by Nova legal and procurement.", ownerId: "u-tashi" }),
+    m("m52", "p5", 7, "Revised code of conduct", { base: -6, state: "accepted", acceptedAt: dt(-5), criteria: "Approved by Gera legal and procurement.", ownerId: "u-tashi" }),
     m("m53", "p5", 8, "Onboarding checklist handover", { base: -3, acceptance: "internal", state: "accepted", acceptedAt: dt(-3), ownerId: "u-sanjeev" }),
     m("m41", "p4", 2, "Catchment analysis", { base: 5, state: "in_progress", ownerId: "u-tashi", criteria: "All 40 sites analysed." }),
     m("m42", "p4", 7, "Board recommendation", { base: 45, ownerId: "u-tashi", criteria: "Board accepts ranked shortlist." }),
@@ -322,7 +322,7 @@ export function seed(): DB {
     {
       id: "b1",
       projectId: "p1",
-      reason: "IT asset inventory export not yet provided by Nova IT",
+      reason: "IT asset inventory export not yet provided by Gera IT",
       type: "client input",
       responsibleId: "u-arjun",
       raisedAt: dt(-12),
@@ -350,7 +350,7 @@ export function seed(): DB {
     { id: "a2", projectId: "p1", description: "Confirm the December steering committee date", ownerId: "u-gulzer", due: d(4), source: { kind: "publication", id: "pub1", label: "Steering Committee #2" }, state: "open", audience: CLIENT, authorId: "u-tashi", createdAt: dt(-8) },
     { id: "a3", projectId: "p1", description: "Draft role-mapping template for HR", ownerId: "u-shrenik-team", due: d(1), source: { kind: "manual", label: "Team planning" }, state: "open", audience: TEAM, authorId: "u-sanjeev", createdAt: dt(-9) },
     { id: "a4", projectId: "p1", description: "Provide IT asset inventory export (CMDB extract)", ownerId: "u-arjun", due: d(-3), source: { kind: "manual", label: "Blocker B-1" }, state: "open", audience: ws("ws-it"), authorId: "u-sanjeev", createdAt: dt(-12) },
-    { id: "a6", projectId: "p5", description: "Hand over onboarding checklist template to Nova procurement", ownerId: "u-sanjeev", due: d(1), source: { kind: "manual", label: "Closure prep" }, state: "open", audience: CLIENT, authorId: "u-tashi", createdAt: dt(-3) },
+    { id: "a6", projectId: "p5", description: "Hand over onboarding checklist template to Gera procurement", ownerId: "u-sanjeev", due: d(1), source: { kind: "manual", label: "Closure prep" }, state: "open", audience: CLIENT, authorId: "u-tashi", createdAt: dt(-3) },
     { id: "a5", projectId: "p1", description: "Circulate interview schedule for IT leads", ownerId: "u-sanjeev", source: { kind: "manual", label: "Team planning" }, state: "done", audience: TEAM, authorId: "u-sanjeev", createdAt: dt(-30) },
   )
 
@@ -359,7 +359,7 @@ export function seed(): DB {
     n, fileName, sizeKb, changeNote, uploadedAt: dt(off, 14), uploadedBy: by,
   })
   db.documents.push(
-    { id: "doc1", projectId: "p1", title: "Current-State Assessment Report", kind: "deliverable", phaseId: "p1-ph2", audience: CLIENT, authorId: "u-sanjeev", publishedAt: dt(-46), versions: [v(1, "Nova_CurrentState_v1.pdf", 4200, "Initial release for review.", -48), v(2, "Nova_CurrentState_v2.pdf", 4380, "Added Ranjangaon plant interviews and corrected headcount table (p.14).", -45)] },
+    { id: "doc1", projectId: "p1", title: "Current-State Assessment Report", kind: "deliverable", phaseId: "p1-ph2", audience: CLIENT, authorId: "u-sanjeev", publishedAt: dt(-46), versions: [v(1, "Gera_CurrentState_v1.pdf", 4200, "Initial release for review.", -48), v(2, "Gera_CurrentState_v2.pdf", 4380, "Added Ranjangaon plant interviews and corrected headcount table (p.14).", -45)] },
     { id: "doc2", projectId: "p1", title: "HR Target Operating Model", kind: "deliverable", phaseId: "p1-ph4", audience: ws("ws-hr"), authorId: "u-sanjeev", publishedAt: dt(-2), versions: [v(1, "HR_TOM_v1.pdf", 2900, "Draft for review: service catalogue, org design, RACI.", -2)] },
     { id: "doc3", projectId: "p1", title: "IT landscape working notes", kind: "working", phaseId: "p1-ph4", audience: TEAM, authorId: "u-sanjeev", versions: [v(1, "IT_landscape_notes.docx", 310, "Working notes.", -7)] },
     { id: "doc4", projectId: "p1", title: "Executive compensation benchmarks", kind: "reference", phaseId: "p1-ph4", audience: { kind: "named", userIds: ["u-tashi", "u-gulzer"] }, authorId: "u-tashi", publishedAt: dt(-15), versions: [v(1, "Exec_Comp_Benchmarks.xlsx", 880, "Benchmarks for CXO-1 and CXO-2 bands.", -15, "u-tashi")] },
@@ -429,7 +429,7 @@ export function seed(): DB {
       { id: "c2", authorId: "u-tashi", body: "Yes, we'll reformat for the December board pack.", at: dt(-7, 12) },
     ] },
     { id: "th2", projectId: "p1", subject: { kind: "publication", id: "pub1" }, audience: "team", purpose: "discussion", resolved: false, comments: [
-      { id: "c3", authorId: "u-sanjeev", body: "Internal: board template is in the Nova brand kit folder.", at: dt(-7, 13) },
+      { id: "c3", authorId: "u-sanjeev", body: "Internal: board template is in the Gera brand kit folder.", at: dt(-7, 13) },
     ] },
   )
 
@@ -447,7 +447,7 @@ export function seed(): DB {
         { id: "li3", label: "Analyst", qty: 120, unit: "days", rate: 55000 },
       ],
       expenses: 650000, taxRate: 18,
-      assumptions: ["Nova provides timely access to HR and IT data owners", "Work is based in Pune with up to 6 plant visits"],
+      assumptions: ["Gera provides timely access to HR and IT data owners", "Work is based in Pune with up to 6 plant visits"],
       exclusions: ["System implementation", "Change management roll-out"],
       validUntil: d(-60), detailLevel: "line_items",
       internal: { costPerDay: 42000, targetMarginPct: 38, notes: "Analyst rate discounted 10% for multi-project relationship." },
@@ -465,7 +465,7 @@ export function seed(): DB {
         { id: "li3", label: "Analyst", qty: 132, unit: "days", rate: 55000 },
       ],
       expenses: 720000, taxRate: 18,
-      assumptions: ["Nova provides timely access to HR, IT and Finance data owners"],
+      assumptions: ["Gera provides timely access to HR, IT and Finance data owners"],
       exclusions: ["System implementation", "Change management roll-out"],
       validUntil: d(30), detailLevel: "line_items",
       internal: { costPerDay: 42000, targetMarginPct: 37, notes: "Finance module priced at standard rates." },
@@ -548,7 +548,7 @@ export function seed(): DB {
   // ── Audit (seeded history) ────────────────────────────────────────────────
   const log = (projectId: string | undefined, off: number, actorId: string, action: string, detail: string, security = false) =>
     db.audit.push({ id: `au-${db.audit.length + 1}`, projectId, at: dt(off, 12), actorId, action, detail, security })
-  log("p1", -85, "u-tashi", "Project created", "NOVA-2026-001 created from default 8-phase template")
+  log("p1", -85, "u-tashi", "Project created", "GERA-2026-001 created from default 8-phase template")
   log("p1", -80, "u-tashi", "Estimate shared", "Estimate v1 shared with Gulzer (Tier A approval requested)")
   log("p1", -72, "u-gulzer", "Approval decided", "Estimate v1 approved (Fresh sign-in + OTP)")
   log("p1", -72, "system", "Lifecycle changed", "Proposal → Active. Baseline dates frozen for 9 milestones")
@@ -558,8 +558,8 @@ export function seed(): DB {
   log("p1", -4, "u-tashi", "Date changed", "IT systems landscape blueprint: current date moved +10 days (linked to blocker B-1)")
   log("p1", -2, "u-sanjeev", "Approval requested", "HR target operating model → Gulzer (Tier B)")
   log("p1", -1, "u-rohit", "Access requested", "Executive compensation benchmarks (Named) — reason recorded")
-  log(undefined, -14, "u-admin", "User invited", "arjun.nair@novaindustries.com invited with preset 'Workstream contributor'", true)
-  log(undefined, -3, "unknown", "Failed sign-in", "3 failed OTP attempts for priya.patel@novaindustries.com", true)
+  log(undefined, -14, "u-admin", "User invited", "arjun.nair@geradevelopment.com invited with preset 'Workstream contributor'", true)
+  log(undefined, -3, "unknown", "Failed sign-in", "3 failed OTP attempts for priya.patel@geradevelopment.com", true)
   log("p5", -55, "u-gulzer", "Approval decided", "Estimate v1 approved (Fresh sign-in + OTP)")
   log("p5", -5, "u-gulzer", "Approval decided", "Revised code of conduct accepted (one-click link)")
   log("p3", -20, "u-tashi", "Lifecycle changed", "Active → Paused: Site access for Chakan plant suspended")

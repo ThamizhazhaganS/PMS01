@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Check, Eye, Minus, ShieldAlert } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
-import { accessRequests, audiencePeople, ctxFor, members, userName, workstreams } from "@/lib/data"
+import { accessRequests, audiencePeople, ctxFor, members, orgById, userName, workstreams } from "@/lib/data"
 import { db } from "@/lib/store"
 import { canManageAccess, canSeeAudience, canViewAs, isOwner, isRestrictedStub } from "@/lib/access/audience"
 import { ROLE_LABEL, fmtDateTime, isStaffKind } from "@/lib/domain/rules"
@@ -74,7 +74,7 @@ export default async function People({ params }: { params: Promise<{ projectId: 
                   <td className="py-2.5 pr-3">
                     <div className="flex items-center gap-2">
                       <Initials name={user.name} />
-                      <div><div className="font-medium">{user.name}{m.selfGranted && <Pill tone="bad" className="ml-1.5"><ShieldAlert className="size-3" /> Admin self-grant</Pill>}</div><div className="text-xs text-muted-foreground">{isStaffKind(user.kind) ? "Morphoverse" : "Nova Industries"} · {user.email}</div></div>
+                      <div><div className="font-medium">{user.name}{m.selfGranted && <Pill tone="bad" className="ml-1.5"><ShieldAlert className="size-3" /> Admin self-grant</Pill>}</div><div className="text-xs text-muted-foreground">{orgById(user.orgId)?.name} · {user.email}</div></div>
                     </div>
                   </td>
                   <td className="py-2.5 pr-3 text-xs">{m.role.replace("_", " ")}<div className="text-muted-foreground">{m.preset}</div></td>

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { ctxFor, projectsFor, summary } from "@/lib/data"
+import { ctxFor, orgById, projectsFor, summary } from "@/lib/data"
 import { attentionFor } from "@/lib/attention"
 import { requireUser } from "@/lib/page-ctx"
 import { fmtDate, fmtINR } from "@/lib/domain/rules"
@@ -17,7 +17,7 @@ export default async function Portfolio() {
 
   return (
     <>
-      <PageTitle eyebrow="Nova Industries · All Morphoverse engagements" title={<>Portfolio, <em>at a glance</em>.</>}>
+      <PageTitle eyebrow={`${orgById(user.orgId)?.name} · All Morphoverse engagements`} title={<>Portfolio, <em>at a glance</em>.</>}>
         Client-visible status only. Internal Morphoverse notes are never part of this view.
       </PageTitle>
 
@@ -45,7 +45,7 @@ export default async function Portfolio() {
             <tr className="border-b text-left text-xs text-muted-foreground">
               <th className="p-3 font-medium">Engagement</th>
               <th className="p-3 font-medium">Health</th>
-              <th className="p-3 font-medium">Owner</th>
+              <th className="p-3 font-medium">Responsible</th>
               <th className="p-3 font-medium">Next milestone</th>
               <th className="p-3 font-medium">Progress</th>
               <th className="p-3 text-center font-medium">Overdue approvals</th>
@@ -62,7 +62,7 @@ export default async function Portfolio() {
                   <div className="mt-1 flex flex-wrap gap-1"><LifecycleBadge lifecycle={r.project.lifecycle} />{r.stale && r.project.lifecycle !== "proposal" && <Pill tone="warn">Stale</Pill>}</div>
                 </td>
                 <td className="p-3"><HealthBadge health={r.status?.health} /></td>
-                <td className="p-3 text-xs">{r.owner?.name}</td>
+                <td className="p-3 text-xs"><div className="font-medium">{r.owner?.name}</div><div className="text-muted-foreground">Client lead: {r.clientLeads.map((c) => c.name).join(", ") || "—"}</div></td>
                 <td className="p-3 text-xs">{r.next ? <><div className="font-medium">{r.next.name}</div><div className="text-muted-foreground">{fmtDate(r.next.currentDate)}</div></> : "—"}</td>
                 <td className="p-3 text-xs tabular-nums">{r.progress.accepted} of {r.progress.total} accepted</td>
                 <td className="p-3 text-center"><Count n={r.overdueApprovals.length} bad /></td>

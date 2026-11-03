@@ -102,7 +102,7 @@ export function OrgDialog() {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>New client organisation</DialogTitle>
-          <DialogDescription>The code prefixes its project IDs, e.g. NOVA-2026-001.</DialogDescription>
+          <DialogDescription>The code prefixes its project IDs, e.g. GERA-2026-001.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <Field label="Name"><input className="field" value={name} onChange={(e) => setName(e.target.value)} /></Field>

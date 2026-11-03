@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowUpRight, Ban, CircleDollarSign, Clock, PauseCircle, Stamp } from "lucide-react"
 import { attentionFor } from "@/lib/attention"
+import { orgById } from "@/lib/data"
 import { requireUser } from "@/lib/page-ctx"
 import { Pill } from "@/components/shared/badges"
 import { Empty, PageTitle } from "@/components/shared/ui"
@@ -12,7 +13,7 @@ export default async function Attention() {
   const items = attentionFor(user)
   return (
     <div className="max-w-4xl">
-      <PageTitle eyebrow="Exceptions across Nova Industries" title="Needs attention">
+      <PageTitle eyebrow={`Exceptions across ${orgById(user.orgId)?.name}`} title="Needs attention">
         Overdue approvals, commercial changes, long-standing blockers, stale statuses and paused projects.
       </PageTitle>
       {items.length === 0 ? (

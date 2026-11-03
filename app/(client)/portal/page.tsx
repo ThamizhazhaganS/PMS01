@@ -25,7 +25,7 @@ export default async function ClientHome() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {projects.map((p) => (
-            <ProjectCard key={p.id} s={summary(ctxFor(user, p.id)!)} href={`/portal/projects/${p.id}`} needs={needs.filter((n) => n.projectId === p.id).length} />
+            <ProjectCard key={p.id} s={summary(ctxFor(user, p.id)!)} href={`/portal/projects/${p.id}`} needs={needs.filter((n) => n.projectId === p.id).length} viewer="client" />
           ))}
         </div>
       )}

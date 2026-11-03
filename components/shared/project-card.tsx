@@ -1,13 +1,14 @@
 import Link from "next/link"
 import { ArrowUpRight, CircleAlert, Clock } from "lucide-react"
 import type { summary } from "@/lib/data"
-import { fmtDate, fmtINR, relDays } from "@/lib/domain/rules"
+import { ROLE_LABEL, fmtDate, fmtINR, relDays } from "@/lib/domain/rules"
 import { HealthBadge, LifecycleBadge, Pill } from "./badges"
+import { Initials } from "./ui"
 
 type Summary = ReturnType<typeof summary>
 
 /** One card per project: status statement, health, next milestone, needs-you count (UX-01). */
-export function ProjectCard({ s, href, needs, showMoney, orgName }: { s: Summary; href: string; needs?: number; showMoney?: boolean; orgName?: string }) {
+export function ProjectCard({ s, href, needs, showMoney, orgName, viewer = "staff" }: { s: Summary; href: string; needs?: number; showMoney?: boolean; orgName?: string; viewer?: "staff" | "client" }) {
   return (
     <Link href={href} className="group flex flex-col rounded-xl border bg-card p-5 transition hover:border-foreground/20 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
       <div className="flex items-start justify-between gap-3">
@@ -55,6 +56,55 @@ export function ProjectCard({ s, href, needs, showMoney, orgName }: { s: Summary
           </div>
         )}
       </dl>
+      <People s={s} viewer={viewer} />
     </Link>
+  )
+}
+
+/** Who is responsible, readable without opening the project. Names and roles only. */
+function People({ s, viewer }: { s: Summary; viewer: "staff" | "client" }) {
+  const team = s.team.filter((t) => t.id !== s.owner?.id)
+  return (
+    <dl className="mt-4 grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 border-t pt-4 text-sm">
+      <dt className="eyebrow">Responsible</dt>
+      <dd className="flex min-w-0 items-center gap-2">
+        {s.owner ? (
+          <>
+            <Initials name={s.owner.name} className="size-6 bg-brand text-[10px] text-brand-foreground" />
+            <span className="truncate font-medium">{s.owner.name}</span>
+            <span className="text-xs text-muted-foreground">· {ROLE_LABEL[s.owner.kind]}</span>
+          </>
+        ) : (
+          "—"
+        )}
+      </dd>
+      {viewer === "staff" && (
+        <>
+          <dt className="eyebrow">Client lead</dt>
+          <dd className="truncate">{s.clientLeads.length ? s.clientLeads.map((c) => c.name).join(", ") : <span className="text-muted-foreground">Not yet assigned</span>}</dd>
+        </>
+      )}
+      <dt className="eyebrow">{viewer === "client" ? "Morphoverse team" : "Team"}</dt>
+      <dd className="flex min-w-0 items-center gap-2">
+        {team.length ? (
+          <>
+            <span className="flex -space-x-1.5" aria-hidden>
+              {team.slice(0, 4).map((t) => (
+                <span key={t.id} title={t.name}>
+                  <Initials name={t.name} className="size-6 text-[10px] ring-2 ring-card" />
+                </span>
+              ))}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {team.slice(0, 2).map((t) => t.name).join(", ")}
+              {team.length > 2 ? ` +${team.length - 2}` : ""}
+            </span>
+            <span className="sr-only">Team: {team.map((t) => t.name).join(", ")}</span>
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground">No team members yet</span>
+        )}
+      </dd>
+    </dl>
   )
 }

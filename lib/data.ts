@@ -366,7 +366,21 @@ export function summary(ctx: AccessCtx) {
     approvedTotal: est ? clientTotal(est) : undefined,
     expectedEnd: ms.filter((m) => m.state !== "dropped").map((m) => m.currentDate).sort().at(-1),
     owner: userById(ctx.project.ownerId),
+    ...people(ctx.project.id),
     isExec: isExecOverseer(ctx),
+  }
+}
+
+/**
+ * Who is responsible, for display on cards. Names and project roles only (REQ-ORG-03):
+ * project members may see who else is on their own project — never emails or rights.
+ */
+function people(projectId: string) {
+  const ms = members(projectId).filter((m) => m.user.status === "active")
+  const lite = (u: User) => ({ id: u.id, name: u.name })
+  return {
+    clientLeads: ms.filter((m) => m.membership.role === "client_lead").map((m) => lite(m.user)),
+    team: ms.filter((m) => m.membership.role === "team" || m.membership.role === "director").map((m) => lite(m.user)),
   }
 }
 

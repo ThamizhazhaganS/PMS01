@@ -1,5 +1,5 @@
 import { AppHeader } from "@/components/shared/app-header"
-import { needsYou } from "@/lib/data"
+import { needsYou, orgById } from "@/lib/data"
 import { requireUser } from "@/lib/page-ctx"
 
 export default async function ExecLayout({ children }: { children: React.ReactNode }) {
@@ -8,7 +8,7 @@ export default async function ExecLayout({ children }: { children: React.ReactNo
     <>
       <AppHeader
         user={user}
-        sub="Nova Industries · Executive oversight"
+        sub={`${orgById(user.orgId)?.name} · Executive oversight`}
         searchAction="/portal/search"
         nav={[
           { href: "/exec", label: "Portfolio" },

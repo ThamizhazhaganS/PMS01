@@ -30,9 +30,9 @@ describe("REQ-SRC-01 audience-safe search", () => {
   })
 
   it("stays inside the user's organisation and projects (T-01, T-02)", () => {
-    expect(hits("u-emma", "Nova")).toHaveLength(0)
+    expect(hits("u-emma", "Gera")).toHaveLength(0)
     expect(hits("u-diva", "Procurement")).toHaveLength(0)
-    expect(hits("u-admin", "Nova")).toHaveLength(0)
+    expect(hits("u-admin", "Gera")).toHaveLength(0)
   })
 
   it("skips retracted records and needs at least two characters", () => {
@@ -45,7 +45,7 @@ const input = (over: Partial<NewProjectInput> = {}): NewProjectInput => ({
   name: "Finance Shared Services Assessment",
   clientOrgId: "org-nova",
   ownerId: "u-tashi",
-  objectives: "Assess Finance shared services across Nova's plants.",
+  objectives: "Assess Finance shared services across Gera's plants.",
   scope: "Current state, target model, business case.",
   plannedStart: "2027-01-04",
   targetEnd: "2027-04-30",
@@ -64,7 +64,7 @@ describe("REQ-PRJ-01 creating a project", () => {
     const r = ok(await createProject(input({ ownerId: "u-sanjeev" }))) // ignored: the creating CEO owns it
     const p = created()
     expect(r.id).toBe(p.id)
-    expect(p.code).toBe("NOVA-2027-001")
+    expect(p.code).toBe("GERA-2027-001")
     expect(p.lifecycle).toBe("setup")
     expect(p.ownerId).toBe("u-tashi") // the CEO creating a project owns it
     expect(db().phases.filter((x) => x.projectId === p.id)).toHaveLength(8)

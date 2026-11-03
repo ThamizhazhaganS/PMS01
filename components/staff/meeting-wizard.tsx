@@ -112,7 +112,7 @@ export function MeetingWizard({ data, docs, canPublish }: { data: PickerData; do
             {data.people.map((p) => (
               <label key={p.user.id} className="flex items-center gap-2 text-sm">
                 <input type="checkbox" className="accent-[var(--brand)]" checked={attendees.includes(p.user.id)} onChange={(e) => setAttendees(e.target.checked ? [...attendees, p.user.id] : attendees.filter((x) => x !== p.user.id))} />
-                {p.user.name} <span className="text-xs text-muted-foreground">· {isStaffKind(p.user.kind) ? "Morphoverse" : "Nova"} · {ROLE_LABEL[p.user.kind]}</span>
+                {p.user.name} <span className="text-xs text-muted-foreground">· {isStaffKind(p.user.kind) ? "Morphoverse" : "Client"} · {ROLE_LABEL[p.user.kind]}</span>
               </label>
             ))}
           </fieldset>
