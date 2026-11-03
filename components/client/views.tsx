@@ -8,6 +8,7 @@ import {
   blockers,
   changeRequests,
   clientTotal,
+  estimateFiles,
   decisions,
   documents,
   estimates,
@@ -27,6 +28,7 @@ import { NeedsList } from "@/components/shared/needs-list"
 import { EstimateBody } from "@/components/shared/estimate-view"
 import { CommentThreads } from "@/components/shared/comment-thread"
 import { RequestAccessButton, RequestCorrection, WithdrawChange } from "./client-controls"
+import { EstimateFilesPanel } from "@/components/staff/estimate-editor"
 import { cn } from "@/lib/utils"
 
 /** Which client sections have content (UX-06: hide empty sections). */
@@ -273,6 +275,9 @@ export function ClientDecisions({ ctx, readOnly }: { ctx: AccessCtx; readOnly?: 
             {e.approvedAt && <span className="text-xs text-muted-foreground">Approved {fmtDate(e.approvedAt)}</span>}
           </div>
           <EstimateBody e={e} total={clientTotal(e)} clientView />
+          <div className="mt-5 border-t pt-4">
+            <EstimateFilesPanel projectId={ctx.project.id} estimateId={e.id} files={estimateFiles(ctx, e.id)} editable={false} />
+          </div>
           <p className="mt-4 text-xs text-muted-foreground">Record of agreement only; not a contract or payment authorization.</p>
         </section>
       ))}

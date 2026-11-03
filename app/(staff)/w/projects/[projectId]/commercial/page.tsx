@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { EyeOff, Info } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
-import { estimates, userName } from "@/lib/data"
+import { estimateFiles, estimates, userName } from "@/lib/data"
 import { isProjectDirector } from "@/lib/access/audience"
 import { estimateTotals, fmtDate, fmtINR } from "@/lib/domain/rules"
 import type { Estimate } from "@/lib/domain/types"
@@ -9,7 +9,7 @@ import { EstimateStateBadge } from "@/components/shared/badges"
 import { EstimateBody } from "@/components/shared/estimate-view"
 import { ActionButton } from "@/components/shared/dialogs"
 import { Empty, Section } from "@/components/shared/ui"
-import { EstimateEditor } from "@/components/staff/estimate-editor"
+import { EstimateEditor, EstimateFilesPanel } from "@/components/staff/estimate-editor"
 import { advanceEstimate, newEstimateVersion } from "@/lib/actions"
 import { cn } from "@/lib/utils"
 
@@ -76,6 +76,9 @@ export default async function Commercial({ params, searchParams }: { params: Pro
           >
             {cmp && <Compare a={sel} b={cmp} />}
             <EstimateBody e={sel} />
+            <div className="mt-6 border-t pt-5">
+              <EstimateFilesPanel projectId={projectId} estimateId={sel.id} files={estimateFiles(ctx, sel.id)} editable={director && sel.state === "draft"} />
+            </div>
             <p className="mt-5 text-xs text-muted-foreground">
               Client sees: {sel.detailLevel === "line_items" ? "line items and total" : "total only"}. Approval is a record of agreement only; not a contract or payment authorization.
             </p>

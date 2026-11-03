@@ -99,7 +99,8 @@ export type DocView = DocumentItem | { restricted: true; id: string; title: stri
 
 export function documents(ctx: AccessCtx): DocView[] {
   const out: DocView[] = []
-  for (const d of db().documents.filter((x) => x.projectId === ctx.project.id)) {
+  // Commercial files are shown only with their estimate (see estimateFiles).
+  for (const d of db().documents.filter((x) => x.projectId === ctx.project.id && x.kind !== "commercial")) {
     if (canSeeAudience(ctx, d.audience, d.authorId, "document")) out.push(d)
     else if (isRestrictedStub(ctx, d.audience, d.authorId, "document"))
       out.push({ restricted: true, id: d.id, title: d.title, kind: d.kind, authorId: d.authorId, publishedAt: d.publishedAt })
@@ -248,6 +249,7 @@ export function approvalView(ctx: AccessCtx, a: ApprovalRequest): ApprovalView {
       { label: "Effort", value: `${e.effortDays} person-days` },
       { label: "Duration", value: `${e.durationWeeks} weeks` },
       { label: "Valid until", value: fmtDate(e.validUntil) },
+      { label: "Supporting files", value: e.attachmentIds.length ? `${e.attachmentIds.length} file(s) — see Decisions & agreements` : "None" },
     )
     notice = "Record of agreement only; not a contract or payment authorization."
   }
@@ -412,4 +414,22 @@ export function threadViews(ctx: AccessCtx, subjectId: string) {
     resolved: t.resolved,
     comments: t.comments.map((c) => ({ id: c.id, author: userName(c.authorId), body: c.body, at: c.at })),
   }))
+}
+
+/**
+ * Supporting files of an estimate. Staff see them always; client users exactly
+ * when they can see that estimate (shared, and the viewer may see commercials).
+ */
+export function estimateFiles(ctx: AccessCtx, estimateId: string) {
+  const e = estimates(ctx).find((x) => x.id === estimateId)
+  if (!e) return []
+  return e.attachmentIds
+    .map((id) => db().documents.find((d) => d.id === id && d.projectId === ctx.project.id))
+    .filter((d): d is DocumentItem => !!d)
+    .map((d) => ({ id: d.id, title: d.title, fileName: d.versions.at(-1)!.fileName, sizeKb: d.versions.at(-1)!.sizeKb, version: d.versions.length }))
+}
+
+/** Download check for a commercial file: visible wherever one of its estimates is. */
+export function canDownloadCommercial(ctx: AccessCtx, documentId: string) {
+  return estimates(ctx).some((e) => e.attachmentIds.includes(documentId))
 }

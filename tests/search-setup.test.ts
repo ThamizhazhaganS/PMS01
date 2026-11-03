@@ -112,7 +112,7 @@ describe("Setup → Proposal → Active for a new project", () => {
 
     ok(await newEstimateVersion(p.id))
     const est = db().estimates.find((e) => e.projectId === p.id)!
-    ok(await updateEstimate(p.id, est.id, { scope: "Finance assessment.", effortDays: 60, durationWeeks: 16, expenses: 100000, taxRate: 18, lineItems: [{ id: "l1", label: "Blended team", qty: 60, unit: "days", rate: 90000 }], detailLevel: "line_items", internalNotes: "", costPerDay: 40000, targetMarginPct: 40, validUntil: "2027-02-01" }))
+    ok(await updateEstimate(p.id, est.id, { scope: "Finance assessment.", effortDays: 60, durationWeeks: 16, expenses: 100000, taxRate: 18, lineItems: [{ id: "l1", label: "Blended team", qty: 60, unit: "days", rate: 90000 }], detailLevel: "line_items", internalNotes: "", deliverables: ["Finance assessment report"], assumptions: [], exclusions: [], costPerDay: 40000, targetMarginPct: 40, validUntil: "2027-02-01" }))
     ok(await advanceEstimate(p.id, est.id, "review"))
     ok(await advanceEstimate(p.id, est.id, "share"))
     expect(created().lifecycle).toBe("proposal")

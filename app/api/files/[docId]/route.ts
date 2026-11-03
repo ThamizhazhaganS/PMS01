@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/store"
-import { getViewer, projectCtx } from "@/lib/data"
+import { canDownloadCommercial, getViewer, projectCtx } from "@/lib/data"
 import { canSeeAudience } from "@/lib/access/audience"
 
 /**
@@ -13,8 +13,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ docId: s
   const user = await getViewer()
   const doc = db().documents.find((d) => d.id === docId)
   const ctx = doc && projectCtx(user, doc.projectId)
-  if (!doc || !ctx || !canSeeAudience(ctx, doc.audience, doc.authorId, "document") || doc.retracted)
-    return new NextResponse("Not found", { status: 404 })
+  const allowed = !!doc && !!ctx && (canSeeAudience(ctx, doc.audience, doc.authorId, "document") || (doc.kind === "commercial" && canDownloadCommercial(ctx, doc.id)))
+  if (!doc || !ctx || !allowed || doc.retracted) return new NextResponse("Not found", { status: 404 })
   const n = Number(new URL(req.url).searchParams.get("v")) || doc.versions.length
   const v = doc.versions.find((x) => x.n === n)
   if (!v) return new NextResponse("Not found", { status: 404 })

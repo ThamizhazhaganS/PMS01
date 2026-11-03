@@ -227,7 +227,8 @@ export interface DocVersion {
 
 export interface DocumentItem extends Audienced {
   title: string
-  kind: "deliverable" | "working" | "reference"
+  /** "commercial" files belong to an estimate and are shown only with it. */
+  kind: "deliverable" | "working" | "reference" | "commercial"
   phaseId?: string
   versions: DocVersion[]
   publishedAt?: ISODateTime
@@ -349,6 +350,8 @@ export interface Estimate {
   createdBy: string
   sharedAt?: ISODateTime
   approvedAt?: ISODateTime
+  /** Supporting files (rate card, pricing rationale…). Visible exactly where the estimate is. */
+  attachmentIds: string[]
   /** Milestone current dates captured when the version was shared. */
   scheduleSnapshot: { milestoneId: string; name: string; date: ISODate }[]
 }

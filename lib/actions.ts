@@ -48,6 +48,43 @@ class Refused extends Error {}
 /** datetime-local values are entered in project time (IST). */
 const istToIso = (v: string) => new Date(v.length === 16 ? `${v}:00+05:30` : v).toISOString()
 
+/** Upload validation shared by every file entry point (REQ-DOC-01, NFR-06). */
+function fileProblem(fileName: string) {
+  if (!fileName.trim()) return "Choose a file."
+  if (/\.(exe|bat|cmd|js|scr)$/i.test(fileName)) return "File type not allowed (rejected by validation)."
+  if (/eicar/i.test(fileName)) return "Malware scan failed — file quarantined (NFR-06)."
+  return null
+}
+
+export interface EstimateFields {
+  lineItems: LineItem[]
+  effortDays: number
+  durationWeeks: number
+  expenses: number
+  taxRate: number
+  deliverables: string[]
+  assumptions: string[]
+  exclusions: string[]
+  detailLevel: "line_items" | "total"
+  validUntil: string
+  costPerDay: number
+  targetMarginPct: number
+  internalNotes: string
+}
+
+const cleanList = (xs: string[]) => xs.map((x) => x.trim()).filter(Boolean)
+
+/** A commercial file lives as a Team-only document; the estimate decides who else sees it. */
+function addCommercialDoc(projectId: string, fileName: string, by: string) {
+  const doc = {
+    id: newId("doc"), projectId, title: fileName.replace(/\.[^.]+$/, ""), kind: "commercial" as const,
+    audience: { kind: "team" } as Audience, authorId: by,
+    versions: [{ n: 1, fileName: fileName.trim(), sizeKb: 150 + Math.round(Math.random() * 1500), changeNote: "Supporting file for the estimate.", uploadedAt: nowIso(), uploadedBy: by }],
+  }
+  db().documents.push(doc)
+  return doc.id
+}
+
 async function requireCtx(projectId: string): Promise<AccessCtx> {
   const user = await getViewer()
   if (!user) throw new Refused("Your session has ended. Switch to an active user.")
@@ -743,24 +780,52 @@ export async function newEstimateVersion(projectId: string) {
     const d = db()
     const latest = d.estimates.filter((e) => e.projectId === projectId).sort((a, b) => b.version - a.version)[0]
     if (latest && latest.state === "draft") return fail(`v${latest.version} is already a draft — edit it.`)
-    const base = latest ?? { scope: "", deliverables: [], effortDays: 0, durationWeeks: 0, lineItems: [], expenses: 0, taxRate: 18, assumptions: [], exclusions: [], detailLevel: "line_items" as const, internal: { costPerDay: 42000, targetMarginPct: 38, notes: "" } }
+    const base = latest ?? { scope: ctx.project.scope, deliverables: [], effortDays: 0, durationWeeks: 0, lineItems: [], expenses: 0, taxRate: 18, assumptions: [], exclusions: [], detailLevel: "line_items" as const, internal: { costPerDay: 42000, targetMarginPct: 38, notes: "" }, attachmentIds: [] }
     d.estimates.push({ ...structuredClone(base), id: newId("est"), projectId, version: (latest?.version ?? 0) + 1, state: "draft", validUntil: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), createdAt: nowIso(), createdBy: ctx.user.id, sharedAt: undefined, approvedAt: undefined, scheduleSnapshot: [] })
     audit(ctx.user.id, "Estimate drafted", `v${(latest?.version ?? 0) + 1} created from v${latest?.version ?? "–"}`, projectId)
     return ok("New draft version created.")
   })
 }
 
-export async function updateEstimate(projectId: string, id: string, patch: { scope: string; effortDays: number; durationWeeks: number; expenses: number; taxRate: number; lineItems: LineItem[]; detailLevel: "line_items" | "total"; internalNotes: string; costPerDay: number; targetMarginPct: number; validUntil: string }) {
+export async function updateEstimate(projectId: string, id: string, patch: EstimateFields & { scope: string }) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
     if (!isProjectDirector(ctx)) return fail("Only the CEO edits estimates.")
     const e = db().estimates.find((x) => x.id === id && x.projectId === projectId)
     if (!e) return fail("Not found.")
     if (e.state !== "draft") return fail("Shared or reviewed versions are immutable — create a new version.")
-    Object.assign(e, { scope: patch.scope, effortDays: patch.effortDays, durationWeeks: patch.durationWeeks, expenses: patch.expenses, taxRate: patch.taxRate, lineItems: patch.lineItems, detailLevel: patch.detailLevel, validUntil: patch.validUntil })
+    Object.assign(e, { scope: patch.scope, effortDays: patch.effortDays, durationWeeks: patch.durationWeeks, expenses: patch.expenses, taxRate: patch.taxRate, lineItems: patch.lineItems, detailLevel: patch.detailLevel, validUntil: patch.validUntil, deliverables: cleanList(patch.deliverables), assumptions: cleanList(patch.assumptions), exclusions: cleanList(patch.exclusions) })
     e.internal = { costPerDay: patch.costPerDay, targetMarginPct: patch.targetMarginPct, notes: patch.internalNotes }
     audit(ctx.user.id, "Estimate edited", `v${e.version} draft updated`, projectId)
     return ok("Draft saved.")
+  })
+}
+
+export async function addEstimateFile(projectId: string, estimateId: string, fileName: string) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isProjectDirector(ctx)) return fail("Only the CEO adds estimate files.")
+    const e = db().estimates.find((x) => x.id === estimateId && x.projectId === projectId)
+    if (!e) return fail("Not found.")
+    if (e.state !== "draft") return fail("Shared or reviewed versions are locked — create a new version to change files.")
+    const problem = fileProblem(fileName)
+    if (problem) return fail(problem)
+    e.attachmentIds.push(addCommercialDoc(projectId, fileName, ctx.user.id))
+    audit(ctx.user.id, "Estimate file added", `${fileName} → estimate v${e.version}`, projectId)
+    return ok("File attached. The client sees it once this version is shared.")
+  })
+}
+
+export async function removeEstimateFile(projectId: string, estimateId: string, documentId: string) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isProjectDirector(ctx)) return fail("Only the CEO removes estimate files.")
+    const e = db().estimates.find((x) => x.id === estimateId && x.projectId === projectId)
+    if (!e) return fail("Not found.")
+    if (e.state !== "draft") return fail("Shared or reviewed versions are locked.")
+    e.attachmentIds = e.attachmentIds.filter((x) => x !== documentId)
+    audit(ctx.user.id, "Estimate file removed", `from estimate v${e.version}`, projectId)
+    return ok("File removed from this draft.")
   })
 }
 
@@ -774,6 +839,7 @@ export async function advanceEstimate(projectId: string, id: string, op: "review
     if (op === "review") {
       if (e.state !== "draft") return fail("Only drafts go to internal review.")
       if (!e.effortDays || !e.durationWeeks || !e.lineItems.length) return fail("Effort, duration and line items are required.")
+      if (!e.deliverables.length) return fail("List at least one deliverable — the client approves against it.")
       e.state = "internal_review"
       e.scheduleSnapshot = d.milestones.filter((m) => m.projectId === projectId && m.state !== "dropped").map((m) => ({ milestoneId: m.id, name: m.name, date: m.currentDate }))
       audit(ctx.user.id, "Estimate to review", `v${e.version} locked for internal review; schedule snapshot captured`, projectId)
@@ -1101,6 +1167,8 @@ export interface NewProjectInput {
   workstreams: string[]
   teamIds: string[]
   clientLeadId?: string
+  /** Optional first estimate, created as a private draft (nothing reaches the client until shared). */
+  estimate?: EstimateFields & { files: string[] }
 }
 
 export async function createProject(input: NewProjectInput): Promise<Result> {
@@ -1122,6 +1190,11 @@ export async function createProject(input: NewProjectInput): Promise<Result> {
     const lead = input.clientLeadId ? d.users.find((u) => u.id === input.clientLeadId && u.orgId === org.id && u.kind !== "exec") : undefined
     if (input.clientLeadId && !lead) return fail("The Client Lead must belong to the client organisation.")
 
+    // Validate estimate files up front so a rejected file never leaves a half-created project.
+    for (const f of input.estimate?.files ?? []) {
+      const problem = fileProblem(f)
+      if (problem) return fail(`${f}: ${problem}`)
+    }
     const year = input.plannedStart.slice(0, 4)
     const seq = d.projects.filter((p) => p.code.startsWith(`${org.code}-${year}-`)).length + 1
     const id = newId("p")
@@ -1145,6 +1218,20 @@ export async function createProject(input: NewProjectInput): Promise<Result> {
       if (u && u.id !== owner.id) add(u.id, u.kind === "director" ? "director" : "team")
     }
     if (lead) add(lead.id, "client_lead")
+    if (input.estimate && input.estimate.lineItems.some((li) => li.label.trim())) {
+      const e = input.estimate
+      d.estimates.push({
+        id: newId("est"), projectId: id, version: 1, state: "draft", scope: input.scope.trim(),
+        deliverables: cleanList(e.deliverables), effortDays: e.effortDays, durationWeeks: e.durationWeeks,
+        lineItems: e.lineItems.filter((li) => li.label.trim()), expenses: e.expenses, taxRate: e.taxRate,
+        assumptions: cleanList(e.assumptions), exclusions: cleanList(e.exclusions),
+        validUntil: e.validUntil || new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), detailLevel: e.detailLevel,
+        internal: { costPerDay: e.costPerDay, targetMarginPct: e.targetMarginPct, notes: e.internalNotes.trim() },
+        createdAt: nowIso(), createdBy: owner.id, scheduleSnapshot: [],
+        attachmentIds: e.files.map((f) => addCommercialDoc(id, f, actor.kind === "admin" ? owner.id : actor.id)),
+      })
+      audit(actor.id, "Estimate drafted", `v1 created with the project (${e.files.length} supporting file(s)); private until shared`, id)
+    }
     audit(actor.id, "Project created", `${code} created by ${actor.name} from the default 8-phase template; owner ${owner.name}; ${wsNames.length} workstream(s)`, id, actor.kind === "admin")
     notify({ userIds: d.memberships.filter((m) => m.projectId === id).map((m) => m.userId), tier: 1, title: `You were added to ${input.name.trim()} (${code})`, projectId: id, exclude: actor.id, canSee: (u) => !isClientKind(u.kind) })
     return { ok: true, message: `Created ${code} in Setup. Clients see nothing until an estimate is shared.`, id }

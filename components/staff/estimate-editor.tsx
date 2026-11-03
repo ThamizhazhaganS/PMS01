@@ -1,35 +1,36 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { FileText, Paperclip, Trash2 } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { updateEstimate } from "@/lib/actions"
-import type { Estimate, LineItem } from "@/lib/domain/types"
-import { estimateTotals, fmtINR } from "@/lib/domain/rules"
+import { type EstimateFields, addEstimateFile, removeEstimateFile, updateEstimate } from "@/lib/actions"
+import type { Estimate } from "@/lib/domain/types"
 import { Field } from "@/components/shared/ui"
 import { useAction } from "@/components/shared/use-action"
+import { EstimateFieldsForm } from "./estimate-fields"
+
+const orBlank = (xs: string[]) => (xs.length ? xs : [""])
 
 export function EstimateEditor({ projectId, e }: { projectId: string; e: Estimate }) {
   const [open, setOpen] = useState(false)
-  const [f, setF] = useState({
-    scope: e.scope,
+  const [scope, setScope] = useState(e.scope)
+  const [f, setF] = useState<EstimateFields>({
+    lineItems: e.lineItems,
     effortDays: e.effortDays,
     durationWeeks: e.durationWeeks,
     expenses: e.expenses,
     taxRate: e.taxRate,
+    deliverables: orBlank(e.deliverables),
+    assumptions: orBlank(e.assumptions),
+    exclusions: orBlank(e.exclusions),
     detailLevel: e.detailLevel,
     validUntil: e.validUntil,
-    internalNotes: e.internal.notes,
     costPerDay: e.internal.costPerDay,
     targetMarginPct: e.internal.targetMarginPct,
+    internalNotes: e.internal.notes,
   })
-  const [items, setItems] = useState<LineItem[]>(e.lineItems)
   const { pending, run } = useAction()
-  const t = estimateTotals({ lineItems: items, expenses: f.expenses, taxRate: f.taxRate })
-  const num = (k: keyof typeof f) => (ev: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: Number(ev.target.value) || 0 })
-  const setItem = (i: number, patch: Partial<LineItem>) => setItems(items.map((x, j) => (j === i ? { ...x, ...patch } : x)))
-  const margin = t.fees ? Math.round(((t.fees - items.reduce((s, x) => s + x.qty, 0) * f.costPerDay) / t.fees) * 100) : 0
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -39,54 +40,65 @@ export function EstimateEditor({ projectId, e }: { projectId: string; e: Estimat
           <DialogTitle>Edit estimate v{e.version} (draft)</DialogTitle>
           <DialogDescription>Drafts are editable. Once shared, a version is locked forever.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
-          <Field label="Scope"><textarea className="field" rows={2} value={f.scope} onChange={(ev) => setF({ ...f, scope: ev.target.value })} /></Field>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Effort (person-days)"><input type="number" className="field" value={f.effortDays} onChange={num("effortDays")} /></Field>
-            <Field label="Duration (weeks)"><input type="number" className="field" value={f.durationWeeks} onChange={num("durationWeeks")} /></Field>
-            <Field label="Expenses (₹)"><input type="number" className="field" value={f.expenses} onChange={num("expenses")} /></Field>
-            <Field label="Tax (%)"><input type="number" className="field" value={f.taxRate} onChange={num("taxRate")} /></Field>
-          </div>
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium">Line items</span>
-              <Button size="xs" variant="outline" onClick={() => setItems([...items, { id: `li-${Date.now()}`, label: "", qty: 1, unit: "days", rate: 0 }])}><Plus /> Add line</Button>
-            </div>
-            <div className="space-y-2">
-              {items.map((li, i) => (
-                <div key={li.id} className="grid grid-cols-[1fr_5rem_7rem_auto] gap-2">
-                  <input aria-label="Line item" className="field" placeholder="Role or item" value={li.label} onChange={(ev) => setItem(i, { label: ev.target.value })} />
-                  <input aria-label="Quantity" type="number" className="field" value={li.qty} onChange={(ev) => setItem(i, { qty: Number(ev.target.value) || 0 })} />
-                  <input aria-label="Rate" type="number" className="field" value={li.rate} onChange={(ev) => setItem(i, { rate: Number(ev.target.value) || 0 })} />
-                  <Button size="icon" variant="ghost" aria-label="Remove line" onClick={() => setItems(items.filter((_, j) => j !== i))}><Trash2 /></Button>
-                </div>
-              ))}
-            </div>
-            <p className="mt-2 text-right text-sm">Total incl. tax <b className="tabular-nums">{fmtINR(t.total)}</b></p>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Client-visible detail">
-              <select className="field" value={f.detailLevel} onChange={(ev) => setF({ ...f, detailLevel: ev.target.value as "line_items" | "total" })}>
-                <option value="line_items">Line items + total</option>
-                <option value="total">Total only</option>
-              </select>
-            </Field>
-            <Field label="Valid until"><input type="date" className="field" value={f.validUntil} onChange={(ev) => setF({ ...f, validUntil: ev.target.value })} /></Field>
-          </div>
-          <fieldset className="rounded-lg border border-dashed border-warn/50 bg-warn-soft/40 p-3">
-            <legend className="px-1 text-xs font-semibold text-warn">Internal cost assumptions — never shown to clients</legend>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Internal cost per day (₹)"><input type="number" className="field" value={f.costPerDay} onChange={num("costPerDay")} /></Field>
-              <Field label="Target margin (%)" hint={`Implied margin: ${margin}%`}><input type="number" className="field" value={f.targetMarginPct} onChange={num("targetMarginPct")} /></Field>
-            </div>
-            <div className="mt-3"><Field label="Internal notes"><textarea className="field" rows={2} value={f.internalNotes} onChange={(ev) => setF({ ...f, internalNotes: ev.target.value })} /></Field></div>
-          </fieldset>
+        <div className="grid gap-5">
+          <Field label="Scope"><textarea className="field" rows={2} value={scope} onChange={(ev) => setScope(ev.target.value)} /></Field>
+          <EstimateFieldsForm value={f} onChange={setF} />
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button disabled={pending} onClick={() => run(() => updateEstimate(projectId, e.id, { ...f, lineItems: items }), () => setOpen(false))}>Save draft</Button>
+          <Button disabled={pending} onClick={() => run(() => updateEstimate(projectId, e.id, { ...f, scope }), () => setOpen(false))}>Save draft</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+/**
+ * Supporting files for an estimate (rate card, pricing rationale…).
+ * Editable while the version is a draft; the client sees them once it is shared.
+ */
+export function EstimateFilesPanel({ projectId, estimateId, files, editable }: { projectId: string; estimateId: string; files: { id: string; title: string; fileName: string; sizeKb: number }[]; editable: boolean }) {
+  const { pending, run } = useAction()
+  return (
+    <div>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h4 className="eyebrow flex items-center gap-1.5"><Paperclip className="size-3" /> Supporting files</h4>
+        {editable && (
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted">
+            <Paperclip className="size-3.5" /> Attach file
+            <input
+              type="file"
+              className="sr-only"
+              disabled={pending}
+              onChange={(ev) => {
+                const name = ev.target.files?.[0]?.name
+                ev.target.value = ""
+                if (name) run(() => addEstimateFile(projectId, estimateId, name))
+              }}
+            />
+          </label>
+        )}
+      </div>
+      {files.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{editable ? "Attach the rate card, pricing rationale or proposal so the client can see how the estimate was built." : "No supporting files."}</p>
+      ) : (
+        <ul className="divide-y rounded-lg border">
+          {files.map((file) => (
+            <li key={file.id} className="flex items-center justify-between gap-2 p-2.5 text-sm">
+              <a href={`/api/files/${file.id}`} className="flex min-w-0 items-center gap-2 hover:underline">
+                <FileText className="size-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">{file.fileName}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{file.sizeKb.toLocaleString("en-IN")} KB</span>
+              </a>
+              {editable && (
+                <Button size="icon-sm" variant="ghost" aria-label={`Remove ${file.fileName}`} disabled={pending} onClick={() => run(() => removeEstimateFile(projectId, estimateId, file.id))}>
+                  <Trash2 />
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

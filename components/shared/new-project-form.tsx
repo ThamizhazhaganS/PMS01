@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Trash2 } from "lucide-react"
+import { Paperclip, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createProject } from "@/lib/actions"
+import { type EstimateFields, createProject } from "@/lib/actions"
+import { EstimateFieldsForm, blankEstimate } from "@/components/staff/estimate-fields"
 import { DEFAULT_PHASES } from "@/lib/domain/rules"
 import { Field } from "./ui"
 import { useAction } from "./use-action"
@@ -16,6 +17,9 @@ export function NewProjectForm({ orgs, directors, staff, clients, ownerFixed, do
   const [f, setF] = useState({ name: "", clientOrgId: orgs[0]?.id ?? "", ownerId: ownerFixed ?? directors[0]?.id ?? "", objectives: "", scope: "", plannedStart: "", targetEnd: "", clientLeadId: "" })
   const [ws, setWs] = useState<string[]>([""])
   const [team, setTeam] = useState<string[]>([])
+  const [withEstimate, setWithEstimate] = useState(true)
+  const [est, setEst] = useState<EstimateFields>(blankEstimate)
+  const [files, setFiles] = useState<string[]>([])
   const { pending, run } = useAction()
   const router = useRouter()
   const org = orgs.find((o) => o.id === f.clientOrgId)
@@ -29,7 +33,7 @@ export function NewProjectForm({ orgs, directors, staff, clients, ownerFixed, do
 
   const submit = () =>
     run(async () => {
-      const r = await createProject({ ...f, workstreams: ws, teamIds: team, clientLeadId: f.clientLeadId || undefined })
+      const r = await createProject({ ...f, workstreams: ws, teamIds: team, clientLeadId: f.clientLeadId || undefined, estimate: withEstimate ? { ...est, files } : undefined })
       if (r.ok && r.id) setCreatedId(r.id)
       return r
     })
@@ -87,6 +91,44 @@ export function NewProjectForm({ orgs, directors, staff, clients, ownerFixed, do
             {clients.filter((c) => c.orgId === f.clientOrgId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </Field>
+        <section className="rounded-xl border bg-background/60 p-4" aria-labelledby="commercial-h">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 id="commercial-h" className="text-sm font-semibold">Commercial — first estimate</h2>
+              <p className="text-xs text-muted-foreground">Saved as a private draft (v1). Nothing reaches the client until you share it from the Commercial tab.</p>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="accent-[var(--brand)]" checked={withEstimate} onChange={(e) => setWithEstimate(e.target.checked)} />
+              Add the estimate now
+            </label>
+          </div>
+          {withEstimate && (
+            <div className="mt-4 grid gap-5">
+              <EstimateFieldsForm value={est} onChange={setEst} />
+              <div>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium">Supporting files for the client (rate card, pricing rationale, proposal…)</span>
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted">
+                    <Paperclip className="size-3.5" /> Attach files
+                    <input type="file" multiple className="sr-only" onChange={(e) => { const names = Array.from(e.target.files ?? []).map((x) => x.name); e.target.value = ""; setFiles([...files, ...names]) }} />
+                  </label>
+                </div>
+                {files.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No files yet. The client lead and Executive Director will see them with the estimate once it is shared.</p>
+                ) : (
+                  <ul className="divide-y rounded-lg border">
+                    {files.map((name, i) => (
+                      <li key={`${name}-${i}`} className="flex items-center justify-between gap-2 p-2 text-sm">
+                        <span className="flex min-w-0 items-center gap-2"><Paperclip className="size-3.5 shrink-0 text-muted-foreground" /><span className="truncate">{name}</span></span>
+                        <Button size="icon-sm" variant="ghost" aria-label={`Remove ${name}`} onClick={() => setFiles(files.filter((_, j) => j !== i))}><Trash2 /></Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
         <div className="flex justify-end">
           <Button disabled={pending} onClick={submit}>Create project</Button>
         </div>
@@ -103,7 +145,7 @@ export function NewProjectForm({ orgs, directors, staff, clients, ownerFixed, do
             {DEFAULT_PHASES.map((p, i) => <li key={p}><span className="font-mono">{String(i + 1).padStart(2, "0")}</span> {p}</li>)}
           </ol>
         </div>
-        <p className="text-xs text-muted-foreground">Next: add milestones on Plan, draft the estimate on Commercial, invite the Client Lead, then share the estimate to move to Proposal.</p>
+        <p className="text-xs text-muted-foreground">Next: add milestones on Plan, review the draft estimate on Commercial, invite the Client Lead, then share the estimate to move to Proposal.</p>
       </aside>
     </div>
   )

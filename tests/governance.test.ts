@@ -136,7 +136,7 @@ describe("T-18 approvals bind to one version", () => {
 
   it("shared versions are immutable", async () => {
     const { updateEstimate } = await import("@/lib/actions")
-    refused(await updateEstimate("p2", "est2", { scope: "x", effortDays: 1, durationWeeks: 1, expenses: 0, taxRate: 0, lineItems: [], detailLevel: "total", internalNotes: "", costPerDay: 0, targetMarginPct: 0, validUntil: "2027-01-01" }), /immutable/)
+    refused(await updateEstimate("p2", "est2", { scope: "x", effortDays: 1, durationWeeks: 1, expenses: 0, taxRate: 0, lineItems: [], detailLevel: "total", internalNotes: "", deliverables: ["Finance assessment report"], assumptions: [], exclusions: [], costPerDay: 0, targetMarginPct: 0, validUntil: "2027-01-01" }), /immutable/)
   })
 })
 

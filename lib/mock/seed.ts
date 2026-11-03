@@ -368,6 +368,8 @@ export function seed(): DB {
     { id: "doc7", projectId: "p1", title: "Steering Committee #2 — slides", kind: "reference", phaseId: "p1-ph4", audience: CLIENT, authorId: "u-tashi", publishedAt: dt(-8), versions: [v(1, "SteerCo2_slides.pdf", 2100, "As presented.", -9, "u-tashi")] },
     { id: "doc8", projectId: "p1", title: "ITSM vendor shortlist", kind: "reference", phaseId: "p1-ph4", audience: ws("ws-it"), authorId: "u-sanjeev", publishedAt: dt(-6), versions: [v(1, "ITSM_shortlist.pdf", 760, "Shortlist of 3 vendors.", -6)] },
     { id: "doc9", projectId: "p1", title: "Old org chart (retracted)", kind: "reference", phaseId: "p1-ph2", audience: CLIENT, authorId: "u-sanjeev", publishedAt: dt(-40), retracted: { reason: "Contained personal data of employees on leave; replaced by anonymised chart in the assessment report.", at: dt(-39), by: "u-tashi" }, versions: [v(1, "OrgChart.pdf", 300, "Initial.", -40)] },
+    { id: "doc11", projectId: "p1", title: "Rate card & effort breakdown", kind: "commercial", audience: TEAM, authorId: "u-tashi", versions: [v(1, "RateCard_Effort_v1.pdf", 640, "Effort by role and phase behind estimate v1.", -81, "u-tashi")] },
+    { id: "doc22", projectId: "p2", title: "Savings model & pricing rationale", kind: "commercial", audience: TEAM, authorId: "u-tashi", versions: [v(1, "Procurement_Pricing_Rationale.pdf", 910, "How the fee was derived from the addressable spend.", -7, "u-tashi")] },
     { id: "doc21", projectId: "p2", title: "Procurement proposal deck", kind: "reference", audience: CLIENT, authorId: "u-tashi", publishedAt: dt(-6), versions: [v(1, "Procurement_Proposal.pdf", 1900, "Proposal deck v1.", -6, "u-tashi")] },
     { id: "doc51", projectId: "p5", title: "Supplier Code of Conduct v2", kind: "deliverable", audience: CLIENT, authorId: "u-tashi", publishedAt: dt(-6), versions: [v(1, "Supplier_Code_v2.pdf", 1300, "Revised code for approval.", -6, "u-tashi")] },
     { id: "doc41", projectId: "p4", title: "Helix catchment interim findings", kind: "deliverable", audience: CLIENT, authorId: "u-tashi", publishedAt: dt(-3), versions: [v(1, "Helix_catchment_interim.pdf", 2200, "Interim.", -3, "u-tashi")] },
@@ -453,6 +455,7 @@ export function seed(): DB {
       internal: { costPerDay: 42000, targetMarginPct: 38, notes: "Analyst rate discounted 10% for multi-project relationship." },
       createdAt: dt(-85), createdBy: "u-tashi", sharedAt: dt(-80), approvedAt: dt(-72),
       scheduleSnapshot: snap(["m2", "m3", "m4", "m5", "m6", "m7", "m8"]),
+      attachmentIds: ["doc11"],
     },
     {
       id: "est1b", projectId: "p1", version: 2, state: "draft",
@@ -471,6 +474,7 @@ export function seed(): DB {
       internal: { costPerDay: 42000, targetMarginPct: 37, notes: "Finance module priced at standard rates." },
       createdAt: dt(-1), createdBy: "u-tashi",
       scheduleSnapshot: snap(["m4", "m5", "m6", "m7", "m8"]),
+      attachmentIds: [],
     },
     {
       id: "est2", projectId: "p2", version: 1, state: "shared",
@@ -489,6 +493,7 @@ export function seed(): DB {
       internal: { costPerDay: 42000, targetMarginPct: 40, notes: "Opportunity to bundle with P1 extension." },
       createdAt: dt(-9), createdBy: "u-tashi", sharedAt: dt(-6),
       scheduleSnapshot: snap(["m21", "m22", "m23"]),
+      attachmentIds: ["doc22"],
     },
     {
       id: "est3", projectId: "p3", version: 1, state: "approved",
@@ -500,6 +505,7 @@ export function seed(): DB {
       internal: { costPerDay: 40000, targetMarginPct: 36, notes: "" },
       createdAt: dt(-70), createdBy: "u-tashi", sharedAt: dt(-68), approvedAt: dt(-62),
       scheduleSnapshot: snap(["m31", "m32"]),
+      attachmentIds: [],
     },
     {
       id: "est5", projectId: "p5", version: 1, state: "approved",
@@ -511,6 +517,7 @@ export function seed(): DB {
       internal: { costPerDay: 40000, targetMarginPct: 40, notes: "" },
       createdAt: dt(-60), createdBy: "u-tashi", sharedAt: dt(-58), approvedAt: dt(-55),
       scheduleSnapshot: snap(["m51", "m52", "m53"]),
+      attachmentIds: [],
     },
     {
       id: "est4", projectId: "p4", version: 1, state: "approved",
@@ -522,6 +529,7 @@ export function seed(): DB {
       internal: { costPerDay: 40000, targetMarginPct: 42, notes: "" },
       createdAt: dt(-40), createdBy: "u-tashi", sharedAt: dt(-38), approvedAt: dt(-33),
       scheduleSnapshot: snap(["m41", "m42"]),
+      attachmentIds: [],
     },
   )
 
