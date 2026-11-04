@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { Bell } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
@@ -36,15 +37,15 @@ export function NavLinks({ items }: { items: { href: string; label: string; coun
   )
 }
 
-export function NotificationBell({ items, digestOn }: { items: Notification[]; digestOn: boolean }) {
+export function NotificationBell({ items, digestOn, className }: { items: Notification[]; digestOn: boolean; className?: string }) {
   const unread = items.filter((n) => !n.read).length
   const { run, pending } = useAction()
   return (
     <Popover>
-      <PopoverTrigger className="relative inline-flex size-9 items-center justify-center rounded-md hover:bg-muted" aria-label={`Notifications, ${unread} unread`}>
-        <Bell className="size-4" />
+      <PopoverTrigger className={cn("relative inline-flex size-9 items-center justify-center rounded-md hover:bg-muted", className)} aria-label={`Notifications, ${unread} unread`}>
+        <Bell className="size-3.5" />
         {unread > 0 && (
-          <span className="absolute top-1 right-1 min-w-4 rounded-full bg-bad px-1 text-center text-[10px] leading-4 font-semibold text-white">{unread}</span>
+          <span className="absolute -top-1 -right-1 min-w-4 rounded-full bg-bad px-1 text-center text-[10px] leading-4 font-semibold text-white">{unread}</span>
         )}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-0">
@@ -55,7 +56,7 @@ export function NotificationBell({ items, digestOn }: { items: Notification[]; d
           </button>
         </div>
         <ul className="max-h-80 overflow-y-auto">
-          {items.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">You&apos;re all caught up.</li>}
+          {items.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">You are all caught up.</li>}
           {items.map((n) => (
             <li key={n.id} className={cn("border-b last:border-0", !n.read && "bg-brand-soft/40")}>
               <Link href={n.href} className="block px-3 py-2.5 hover:bg-muted">
@@ -75,11 +76,28 @@ export function NotificationBell({ items, digestOn }: { items: Notification[]; d
         <label className="flex items-center justify-between gap-3 border-t px-3 py-2.5 text-xs">
           <span>
             Daily digest email
-            <span className="block text-muted-foreground">Urgent emails can&apos;t be turned off.</span>
+            <span className="block text-muted-foreground">Urgent emails cannot be turned off.</span>
           </span>
           <Switch checked={digestOn} disabled={pending} onCheckedChange={(v) => run(() => setDigest(!!v))} />
         </label>
       </PopoverContent>
     </Popover>
   )
+}
+
+/** Ctrl+K (or Cmd+K) jumps to search from any screen. */
+export function SearchShortcut({ href }: { href: string }) {
+  const router = useRouter()
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "k" || !(e.ctrlKey || e.metaKey)) return
+      e.preventDefault()
+      const box = document.querySelector<HTMLInputElement>('header input[name="q"]')
+      if (box && box.offsetParent) box.focus()
+      else router.push(href)
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [href, router])
+  return null
 }

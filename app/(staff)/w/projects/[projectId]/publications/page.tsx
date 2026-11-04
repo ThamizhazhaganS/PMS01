@@ -25,17 +25,17 @@ export default async function Publications({ params }: { params: Promise<{ proje
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-xl text-sm text-muted-foreground">
-          Everything starts as a private Draft. Publishing is deliberate: pick an audience, check recipients, confirm. {!pub && <b className="text-warn">You don&apos;t have the publish right — you can prepare drafts.</b>}
+          Files and meeting notes start as private drafts. When you share one, you choose who sees it and check the list first. {!pub && <b className="text-warn">You do not have permission to share with the client — you can prepare drafts.</b>}
         </p>
         <div className="flex gap-2">
-          <UploadDialog projectId={projectId} />
+          <UploadDialog projectId={projectId} data={data} canPublish={pub} />
           <Link href={`/w/projects/${projectId}/publications/new`} className={buttonVariants({ size: "sm" })}>
             <Plus /> New meeting record
           </Link>
         </div>
       </div>
 
-      <Section title="Meeting records & publications" eyebrow="Sorted by actual meeting date">
+      <Section title="Meeting notes & updates" eyebrow="Sorted by actual meeting date">
         {pubs.length === 0 ? (
           <Empty title="Nothing here yet" hint="After each meeting, publish the record in one guided flow." />
         ) : (
@@ -102,7 +102,7 @@ export default async function Publications({ params }: { params: Promise<{ proje
           {docs.map((d) => {
             if ("restricted" in d)
               return (
-                <li key={d.id} className="flex items-center gap-3 py-3 text-sm text-muted-foreground"><Lock className="size-4" /> Restricted item · {d.kind} — you are not on the named list</li>
+                <li key={d.id} className="flex items-center gap-3 py-3 text-sm text-muted-foreground"><Lock className="size-4" /> Private item · {d.kind} — you are not on the named list</li>
               )
             const cur = d.versions.at(-1)!
             return (

@@ -18,6 +18,7 @@ import {
   hasShell,
   isClient,
   isExecOverseer,
+  isProjectDirector,
   isProjectStaff,
   isRestrictedStub,
   isStaff,
@@ -319,7 +320,7 @@ export function needsYou(user: User, projectId?: string): NeedsItem[] {
     for (const a of approvals(ctx)) {
       if (a.state === "pending" && a.approverIds.includes(user.id) && !a.responses.some((r) => r.userId === user.id))
         out.push({
-          id: a.id, kind: "approval", title: a.title, detail: a.tier === "A" ? "Approval · fresh sign-in required" : "Approval",
+          id: a.id, kind: "approval", title: a.title, detail: a.tier === "A" ? "Approval · needs a one-time code" : "Approval",
           due: a.due, overdue: isOverdue(a, p.lifecycle), href: `${base}/${p.id}?approve=${a.id}`, cta: "Review & decide",
           projectId: p.id, projectName: p.name, tier: a.tier, approval: approvalView(ctx, a),
         })
@@ -370,6 +371,7 @@ export function summary(ctx: AccessCtx) {
     owner: userById(ctx.project.ownerId),
     ...people(ctx.project.id),
     isExec: isExecOverseer(ctx),
+    time: timeTotals(ctx.project.id),
   }
 }
 
@@ -383,6 +385,62 @@ function people(projectId: string) {
   return {
     clientLeads: ms.filter((m) => m.membership.role === "client_lead").map((m) => lite(m.user)),
     team: ms.filter((m) => m.membership.role === "team" || m.membership.role === "director").map((m) => lite(m.user)),
+  }
+}
+
+const HOURS_PER_DAY = 8
+
+/** Agreed effort (from the approved estimate) against hours logged. Totals only. */
+function timeTotals(projectId: string) {
+  const est = db().estimates.find((e) => e.projectId === projectId && e.state === "approved")
+  const logged = db().timeEntries.filter((t) => t.projectId === projectId).reduce((s, t) => s + t.hours, 0)
+  const agreed = est ? est.effortDays * HOURS_PER_DAY : undefined
+  return { agreedHours: agreed, loggedHours: logged, usedPct: agreed ? Math.round((logged / agreed) * 100) : undefined }
+}
+
+/**
+ * Time and remaining work for the "at a glance" card. Agreed effort comes from the
+ * approved estimate. Clients and Executive Directors get totals only; the CEO sees
+ * every entry, a team member only their own.
+ */
+export function timeView(ctx: AccessCtx) {
+  // Effort (not price) is shown to everyone on the project, so read it unfiltered.
+  const est = db().estimates.find((e) => e.projectId === ctx.project.id && e.state === "approved")
+  const all = db().timeEntries.filter((t) => t.projectId === ctx.project.id)
+  const logged = all.reduce((s, t) => s + t.hours, 0)
+  const agreedHours = est ? est.effortDays * HOURS_PER_DAY : undefined
+  const openMs = milestones(ctx).filter((m) => m.state !== "accepted" && m.state !== "dropped")
+  const openActions = actions(ctx).filter((a) => a.state === "open")
+  const nextDue = [
+    ...openMs.map((m) => ({ title: m.name, due: m.currentDate })),
+    ...openActions.filter((a) => a.due).map((a) => ({ title: a.description, due: a.due! })),
+  ].sort((a, b) => a.due.localeCompare(b.due))[0]
+  const staff = isProjectStaff(ctx)
+  const seesAll = staff && isProjectDirector(ctx)
+  const entries = !staff ? [] : all
+    .filter((t) => seesAll || t.userId === ctx.user.id)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))
+    .map((t) => ({ ...t, name: userName(t.userId) }))
+  return {
+    hoursPerDay: HOURS_PER_DAY,
+    agreedDays: est?.effortDays,
+    agreedHours,
+    loggedHours: logged,
+    leftHours: agreedHours !== undefined ? agreedHours - logged : undefined,
+    usedPct: agreedHours ? Math.round((logged / agreedHours) * 100) : undefined,
+    milestonesLeft: openMs.length,
+    actionsLeft: openActions.length,
+    nextDue,
+    canLog: staff,
+    seesAll,
+    entries,
+    byPerson: !seesAll ? [] : [...new Set(all.map((t) => t.userId))]
+      .map((userId) => {
+        const mine = all.filter((t) => t.userId === userId)
+        const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)
+        return { userId, name: userName(userId), total: mine.reduce((s, t) => s + t.hours, 0), lastWeek: mine.filter((t) => t.date > weekAgo).reduce((s, t) => s + t.hours, 0) }
+      })
+      .sort((a, b) => b.total - a.total),
   }
 }
 
@@ -412,7 +470,7 @@ export function threadViews(ctx: AccessCtx, subjectId: string) {
     audience: t.audience,
     purpose: t.purpose,
     resolved: t.resolved,
-    comments: t.comments.map((c) => ({ id: c.id, author: userName(c.authorId), body: c.body, at: c.at })),
+    comments: t.comments.map((c) => ({ id: c.id, author: userName(c.authorId), body: c.body, at: c.at, editedAt: c.editedAt, mine: c.authorId === ctx.user.id })),
   }))
 }
 

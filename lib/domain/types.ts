@@ -216,6 +216,17 @@ export interface ActionItem extends Audienced {
   createdAt: ISODateTime
 }
 
+/** Hours a staff member worked on a project. Clients only ever see totals. */
+export interface TimeEntry {
+  id: string
+  projectId: string
+  userId: string
+  date: ISODate
+  hours: number
+  note: string
+  createdAt: ISODateTime
+}
+
 export interface DocVersion {
   n: number
   fileName: string
@@ -399,6 +410,7 @@ export interface Comment {
   authorId: string
   body: string
   at: ISODateTime
+  editedAt?: ISODateTime
 }
 
 export interface Thread {

@@ -1,14 +1,17 @@
 import Link from "next/link"
 import { AlertTriangle, Clock, FileText } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
-import { approvals, approvalView, milestones, needsYou, statuses, summary, userName } from "@/lib/data"
-import { isProjectDirector } from "@/lib/access/audience"
-import { fmtDate, fmtDateTime, fmtINR, relDays, todayIso } from "@/lib/domain/rules"
+import { approvals, approvalView, members, milestones, needsYou, pickerData, statuses, summary, timeView, userName } from "@/lib/data"
+import { canPublish, isProjectDirector } from "@/lib/access/audience"
+import { ROLE_LABEL, fmtDate, fmtDateTime, fmtINR, isStaffKind, relDays, todayIso } from "@/lib/domain/rules"
 import { ApprovalStateBadge, HealthBadge, Pill } from "@/components/shared/badges"
 import { NeedsList } from "@/components/shared/needs-list"
-import { Section, Stat } from "@/components/shared/ui"
+import { Initials, Section, Stat } from "@/components/shared/ui"
 import { StatusDialog } from "@/components/staff/status-dialog"
 import { ClosurePanel } from "@/components/staff/closure-panel"
+import { AtAGlance } from "@/components/shared/at-a-glance"
+import { HoursByPerson, HoursList, LogHoursDialog } from "@/components/staff/hours-log"
+import { UploadDialog } from "@/components/staff/publication-controls"
 
 export default async function Overview({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
@@ -19,6 +22,11 @@ export default async function Overview({ params }: { params: Promise<{ projectId
   const overdueMs = ms.filter((m) => m.state !== "accepted" && m.state !== "dropped" && m.currentDate < todayIso())
   const history = statuses(ctx).slice(1, 4)
   const pending = approvals(ctx).filter((a) => a.state === "pending")
+  const time = timeView(ctx)
+  const people = members(projectId).filter((m) => m.user.status === "active")
+  const ourSide = people.filter((m) => isStaffKind(m.user.kind))
+  const theirSide = people.filter((m) => !isStaffKind(m.user.kind))
+  const canLog = time.canLog && !["closed", "cancelled", "archived"].includes(ctx.project.lifecycle)
 
   return (
     <div className="space-y-5">
@@ -72,6 +80,8 @@ export default async function Overview({ params }: { params: Promise<{ projectId
           <Stat label="Agreed cost" value={s.approvedTotal !== undefined ? fmtINR(s.approvedTotal) : "Not yet approved"} sub="from approved estimate" />
         </div>
 
+        <AtAGlance t={time} action={canLog && <LogHoursDialog projectId={projectId} minDate={ctx.project.plannedStart} />} />
+
         <Section title="Awaiting client decisions" action={<Link className="text-xs text-brand hover:underline" href={`/w/projects/${projectId}/decisions`}>All approvals</Link>}>
           {pending.length === 0 ? (
             <p className="text-sm text-muted-foreground">No pending approval requests.</p>
@@ -84,7 +94,7 @@ export default async function Overview({ params }: { params: Promise<{ projectId
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{a.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        Tier {a.tier} · {v.approverNames.join(", ")} · due {fmtDate(a.due)}
+                        {a.tier === "A" ? "Needs a one-time code" : "One-click approval"} · {v.approverNames.join(", ")} · due {fmtDate(a.due)}
                         {v.unavailable.length > 0 && <span className="text-bad"> · approver unavailable: {v.unavailable.join(", ")}</span>}
                       </p>
                     </div>
@@ -98,10 +108,38 @@ export default async function Overview({ params }: { params: Promise<{ projectId
       </div>
 
       <div className="space-y-5">
+        <Section title="Project team" action={<Link className="text-xs text-brand hover:underline" href={`/w/projects/${projectId}/people`}>Team & access</Link>}>
+          {[{ label: "Morphoverse", list: ourSide }, { label: "Client", list: theirSide }].map((g) => (
+            <div key={g.label} className="mb-3 last:mb-0">
+              <h3 className="eyebrow mb-1.5">{g.label}</h3>
+              {g.list.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No one yet.</p>
+              ) : (
+                <ul className="grid gap-1.5">
+                  {g.list.map((m) => (
+                    <li key={m.user.id} className="flex items-center gap-2 text-sm">
+                      <Initials name={m.user.name} className="size-6 text-[10px]" />
+                      <span className="font-medium">{m.user.name}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {m.user.id === ctx.project.ownerId ? "Owner" : m.membership.role === "client_lead" ? "Client lead" : ROLE_LABEL[m.user.kind]}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </Section>
         <Section title="Needs me">
           <NeedsList items={needsYou(ctx.user, projectId)} />
         </Section>
-        <Section title="Latest publication">
+        {time.canLog && (
+          <Section title={time.seesAll ? "Hours logged by the team" : "My hours"}>
+            <HoursByPerson rows={time.byPerson} />
+            <HoursList projectId={projectId} entries={time.entries} seesAll={time.seesAll} viewerId={ctx.user.id} minDate={ctx.project.plannedStart} editable={canLog} />
+          </Section>
+        )}
+        <Section title="Latest update shared" action={canLog && <UploadDialog projectId={projectId} data={pickerData(ctx)} canPublish={canPublish(ctx)} />}>
           {s.latest ? (
             <Link href={`/w/projects/${projectId}/publications`} className="block rounded-lg p-1 hover:bg-muted">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -111,7 +149,7 @@ export default async function Overview({ params }: { params: Promise<{ projectId
               <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">{s.latest.summary}</p>
             </Link>
           ) : (
-            <p className="text-sm text-muted-foreground">Nothing published yet. Use Publications → New meeting record.</p>
+            <p className="text-sm text-muted-foreground">Nothing shared yet. Use Updates & files → New meeting record.</p>
           )}
         </Section>
       </div>

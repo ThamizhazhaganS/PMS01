@@ -15,7 +15,7 @@ export default async function NewMeeting({ params }: { params: Promise<{ project
   return (
     <div>
       <Link href={`/w/projects/${projectId}/publications`} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-4" /> Publications
+        <ArrowLeft className="size-4" /> Updates & files
       </Link>
       <h2 className="display mb-5 text-2xl">New meeting record</h2>
       <MeetingWizard data={pickerData(ctx)} docs={docs} canPublish={canPublish(ctx)} />

@@ -23,14 +23,14 @@ export default async function Plan({ params }: { params: Promise<{ projectId: st
   const audiences: { label: string; value: Audience }[] = [
     { label: "Team (Morphoverse only)", value: { kind: "team" } },
     ...workstreams(projectId).map((w) => ({ label: `Workstream · ${w.name}`, value: { kind: "workstream", workstreamId: w.id } as Audience })),
-    { label: "Client-wide", value: { kind: "client" } },
+    { label: "Everyone", value: { kind: "client" } },
   ]
 
   return (
     <div className="space-y-5">
       <Section
         title="Phases & milestones"
-        eyebrow="Baseline vs current — reasons on hover or tap"
+        eyebrow="Original date vs current date — tap a date to see why it moved"
         action={
           isProjectDirector(ctx) && (
             <AddMilestoneDialog

@@ -202,7 +202,7 @@ export async function milestoneTransition(projectId: string, milestoneId: string
     if (to === "ready_for_review") {
       if (!["in_progress", "changes_requested"].includes(m.state)) return fail("Milestone must be in progress.")
       if (m.acceptance === "client") {
-        if (!canPublish(ctx)) return fail("You need the publish right to request a client approval.")
+        if (!canPublish(ctx)) return fail("You need permission to share with the client to request a client approval.")
         if (!m.criteria.trim()) return fail("Acceptance criteria are required before review.")
         const valid = approverIds.filter((id) => {
           const mem = d.memberships.find((x) => x.projectId === projectId && x.userId === id)
@@ -408,7 +408,7 @@ export async function uploadDocument(projectId: string, input: { title: string; 
     const doc = { id: newId("doc"), projectId, title: input.title.trim(), kind: input.kind, audience: { kind: "draft" } as Audience, authorId: ctx.user.id, versions: [{ n: 1, fileName: input.fileName.trim(), sizeKb: 200 + Math.round(Math.random() * 3000), changeNote: "Initial upload.", uploadedAt: nowIso(), uploadedBy: ctx.user.id }] }
     db().documents.push(doc)
     audit(ctx.user.id, "Uploaded", `${doc.title} (Draft, scan passed)`, projectId)
-    return ok("Uploaded as a private Draft. Scan passed.")
+    return { ok: true, message: "Uploaded as a private Draft. Scan passed.", id: doc.id }
   })
 }
 
@@ -421,7 +421,7 @@ export async function newDocumentVersion(projectId: string, docId: string, fileN
     if (doc.retracted) return fail("Retracted documents cannot get new versions.")
     if (!fileName.trim()) return fail("Choose a file.")
     if (changeNote.trim().length < 5) return fail("A change note is required (REQ-DOC-07).")
-    if (doc.audience.kind !== "draft" && doc.audience.kind !== "team" && !canPublish(ctx)) return fail("You need the publish right to version a published document.")
+    if (doc.audience.kind !== "draft" && doc.audience.kind !== "team" && !canPublish(ctx)) return fail("You need permission to share with the client to version a published document.")
     const n = doc.versions.length + 1
     doc.versions.push({ n, fileName: fileName.trim(), sizeKb: 200 + Math.round(Math.random() * 3000), changeNote: changeNote.trim(), uploadedAt: nowIso(), uploadedBy: ctx.user.id })
     // Pending approvals bound to an older version become Superseded (REQ-APR-05).
@@ -440,7 +440,7 @@ export async function setDocumentAudience(projectId: string, docId: string, audi
     if (!doc || !canSeeAudience(ctx, doc.audience, doc.authorId)) return fail("Not found.")
     const widening = audienceBreadth(audience) > audienceBreadth(doc.audience)
     const toClients = audience.kind !== "draft" && audience.kind !== "team"
-    if (toClients && !canPublish(ctx)) return fail("You need the publish right to share with clients.")
+    if (toClients && !canPublish(ctx)) return fail("You need permission to share with the client to share with clients.")
     if (!isProjectStaff(ctx)) return fail("Not allowed.")
     if (widening && !confirmed) return fail("Widening an audience must be confirmed.")
     const from = audienceLabel(doc.audience, wsName)
@@ -489,7 +489,7 @@ export async function savePublication(projectId: string, input: PublicationInput
     if (input.title.trim().length < 3) return fail("Title is required.")
     if (input.kind === "meeting" && !input.meetingAt) return fail("Meeting date and time are required.")
     if (publish) {
-      if (!canPublish(ctx)) return fail("You don't have the publish right. Save as Draft and ask the CEO to publish.")
+      if (!canPublish(ctx)) return fail("You do not have permission to share with the client. Save as Draft and ask the CEO to publish.")
       if (!input.audience || input.audience.kind === "draft") return fail("Choose an audience — there is no default.")
       if (!confirmed) return fail("Confirm the recipients before publishing.")
     }
@@ -547,7 +547,7 @@ export async function savePublication(projectId: string, input: PublicationInput
 export async function publishDraftPublication(projectId: string, pubId: string, audience: Audience, confirmed: boolean) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!canPublish(ctx)) return fail("You need the publish right.")
+    if (!canPublish(ctx)) return fail("You need permission to share with the client.")
     const d = db()
     const p = d.publications.find((x) => x.id === pubId && x.projectId === projectId)
     if (!p || p.state !== "draft" || !canSeeAudience(ctx, p.audience, p.authorId) && !isProjectDirector(ctx)) return fail("Not found.")
@@ -567,7 +567,7 @@ export async function publishDraftPublication(projectId: string, pubId: string, 
 export async function revisePublication(projectId: string, pubId: string, summary: string, changeNote: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!canPublish(ctx)) return fail("You need the publish right.")
+    if (!canPublish(ctx)) return fail("You need permission to share with the client.")
     const d = db()
     const old = d.publications.find((x) => x.id === pubId && x.projectId === projectId)
     if (!old || old.state !== "published" || old.supersededById) return fail("Only the current published record can be revised.")
@@ -614,6 +614,60 @@ export async function addComment(projectId: string, subject: { kind: "publicatio
       notify({ userIds: directors(projectId).concat(item.authorId), tier: 1, title: `Correction requested on ${"title" in item ? item.title : "record"}`, projectId, path: "/publications" })
     }
     return ok(purpose === "correction" ? "Correction request sent. The record stays unchanged until a revision is published." : "Comment added.")
+  })
+}
+
+/** A thread the viewer can see, on this project. */
+async function visibleThread(projectId: string, threadId: string) {
+  const ctx = await requireCtx(projectId)
+  const t = db().threads.find((x) => x.id === threadId && x.projectId === projectId)
+  if (!t || (t.audience === "team" && !isProjectStaff(ctx))) throw new Refused("Not found.")
+  const d = db()
+  const item = t.subject.kind === "publication" ? d.publications.find((p) => p.id === t.subject.id) : d.documents.find((p) => p.id === t.subject.id)
+  if (!item || !canSeeAudience(ctx, item.audience, item.authorId)) throw new Refused("Not found.")
+  return { ctx, t, item }
+}
+
+export async function editComment(projectId: string, threadId: string, commentId: string, body: string) {
+  return guard(async () => {
+    const { ctx, t } = await visibleThread(projectId, threadId)
+    const c = t.comments.find((x) => x.id === commentId)
+    if (!c || c.authorId !== ctx.user.id) return fail("You can only edit your own comments.")
+    if (body.trim().length < 2) return fail("Write a comment.")
+    // The earlier wording stays in the change history.
+    audit(ctx.user.id, "Comment edited", `“${c.body}” → “${body.trim()}”`, projectId)
+    Object.assign(c, { body: body.trim(), editedAt: nowIso() })
+    return ok("Comment updated.")
+  })
+}
+
+export async function setThreadResolved(projectId: string, threadId: string, resolved: boolean) {
+  return guard(async () => {
+    const { ctx, t } = await visibleThread(projectId, threadId)
+    if (!isProjectStaff(ctx)) return fail("Morphoverse resolves discussions.")
+    t.resolved = resolved
+    audit(ctx.user.id, resolved ? "Discussion resolved" : "Discussion reopened", `${t.comments.length} comment(s)`, projectId)
+    return ok(resolved ? "Marked as resolved." : "Reopened.")
+  })
+}
+
+/** Turns a comment into an action owned by the person who converts it, due in a week. */
+export async function commentToAction(projectId: string, threadId: string, commentId: string) {
+  return guard(async () => {
+    const { ctx, t, item } = await visibleThread(projectId, threadId)
+    if (!isProjectStaff(ctx)) return fail("Not allowed.")
+    const c = t.comments.find((x) => x.id === commentId)
+    if (!c) return fail("Not found.")
+    const audience: Audience = t.audience === "team" ? { kind: "team" } : item.audience
+    const a: ActionItem = {
+      id: newId("a"), projectId, description: c.body.length > 140 ? `${c.body.slice(0, 137)}…` : c.body, ownerId: ctx.user.id,
+      due: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10),
+      source: { kind: "comment", id: c.id, label: `Comment by ${userName(c.authorId)}` },
+      state: "open", audience, authorId: ctx.user.id, createdAt: nowIso(),
+    }
+    db().actions.push(a)
+    audit(ctx.user.id, "Action from comment", `${a.description} → ${ctx.user.name}`, projectId)
+    return ok("Action created in Plan, due in 7 days. Change the owner or date there.")
   })
 }
 
@@ -801,6 +855,55 @@ export async function updateEstimate(projectId: string, id: string, patch: Estim
   })
 }
 
+function hoursProblem(ctx: AccessCtx, input: { date: string; hours: number }) {
+  const hours = Math.round(Number(input.hours) * 4) / 4
+  if (!(hours > 0 && hours <= 24)) return { error: "Enter between 0.25 and 24 hours." }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return { error: "Choose a date." }
+  if (input.date > todayIso()) return { error: "You cannot log hours for a future date." }
+  if (input.date < ctx.project.plannedStart) return { error: `This project started on ${fmtDate(ctx.project.plannedStart)}.` }
+  return { hours }
+}
+
+export async function recordHours(projectId: string, input: { date: string; hours: number; note: string }) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    if (!isProjectStaff(ctx)) return fail("Only Morphoverse project staff log hours.")
+    const check = hoursProblem(ctx, input)
+    if ("error" in check) return fail(check.error!)
+    const hours = check.hours
+    db().timeEntries.push({ id: newId("te"), projectId, userId: ctx.user.id, date: input.date, hours, note: input.note.trim(), createdAt: nowIso() })
+    audit(ctx.user.id, "Hours logged", `${hours} h on ${fmtDate(input.date)}`, projectId)
+    return ok(`${hours} hours logged.`)
+  })
+}
+
+export async function updateHours(projectId: string, id: string, input: { date: string; hours: number; note: string }) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    const t = db().timeEntries.find((x) => x.id === id && x.projectId === projectId)
+    // Your own entries only; the CEO can correct anyone's.
+    if (!t || !isProjectStaff(ctx) || (t.userId !== ctx.user.id && !isProjectDirector(ctx))) return fail("Not found.")
+    const check = hoursProblem(ctx, input)
+    if ("error" in check) return fail(check.error!)
+    const before = `${t.hours} h on ${fmtDate(t.date)}`
+    Object.assign(t, { date: input.date, hours: check.hours, note: input.note.trim() })
+    audit(ctx.user.id, "Hours corrected", `${before} → ${t.hours} h on ${fmtDate(t.date)} (${userName(t.userId)})`, projectId)
+    return ok("Entry updated.")
+  })
+}
+
+export async function deleteHours(projectId: string, id: string) {
+  return guard(async () => {
+    const ctx = await requireCtx(projectId)
+    const t = db().timeEntries.find((x) => x.id === id && x.projectId === projectId)
+    // Your own entries only; the CEO can correct anyone's.
+    if (!t || !isProjectStaff(ctx) || (t.userId !== ctx.user.id && !isProjectDirector(ctx))) return fail("Not found.")
+    db().timeEntries = db().timeEntries.filter((x) => x.id !== id)
+    audit(ctx.user.id, "Hours removed", `${t.hours} h on ${fmtDate(t.date)} (${userName(t.userId)})`, projectId)
+    return ok("Entry removed.")
+  })
+}
+
 export async function addEstimateFile(projectId: string, estimateId: string, fileName: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
@@ -878,7 +981,7 @@ export async function advanceEstimate(projectId: string, id: string, op: "review
 export async function toggleWorkstream(projectId: string, userId: string, wsId: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!canManageAccess(ctx)) return fail("You don't have the manage-access right.")
+    if (!canManageAccess(ctx)) return fail("You do not have the manage-access right.")
     const m = db().memberships.find((x) => x.projectId === projectId && x.userId === userId)
     if (!m) return fail("Not a member.")
     const had = m.workstreamIds.includes(wsId)
@@ -892,7 +995,7 @@ export async function toggleWorkstream(projectId: string, userId: string, wsId: 
 export async function setPublishRight(projectId: string, userId: string, value: boolean) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!canManageAccess(ctx)) return fail("You don't have the manage-access right.")
+    if (!canManageAccess(ctx)) return fail("You do not have the manage-access right.")
     const m = db().memberships.find((x) => x.projectId === projectId && x.userId === userId)
     if (!m || m.role !== "team") return fail("Publish right applies to Team Members.")
     m.publishRight = value
@@ -904,7 +1007,7 @@ export async function setPublishRight(projectId: string, userId: string, value: 
 export async function removeMember(projectId: string, userId: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!canManageAccess(ctx)) return fail("You don't have the manage-access right.")
+    if (!canManageAccess(ctx)) return fail("You do not have the manage-access right.")
     if (userId === ctx.project.ownerId) return fail("The Owner cannot be removed.")
     const d = db()
     d.memberships = d.memberships.filter((x) => !(x.projectId === projectId && x.userId === userId))
@@ -1241,7 +1344,7 @@ export async function createProject(input: NewProjectInput): Promise<Result> {
 export async function addWorkstream(projectId: string, name: string) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!canManageAccess(ctx)) return fail("You don't have the manage-access right.")
+    if (!canManageAccess(ctx)) return fail("You do not have the manage-access right.")
     if (name.trim().length < 2) return fail("Name the workstream.")
     if (db().workstreams.some((w) => w.projectId === projectId && w.name.toLowerCase() === name.trim().toLowerCase())) return fail("That workstream exists.")
     const w = { id: newId("ws"), projectId, name: name.trim() }
@@ -1256,7 +1359,7 @@ export async function addWorkstream(projectId: string, name: string) {
 export async function addMember(projectId: string, userId: string, role: Membership["role"], workstreamIds: string[]) {
   return guard(async () => {
     const ctx = await requireCtx(projectId)
-    if (!canManageAccess(ctx)) return fail("You don't have the manage-access right.")
+    if (!canManageAccess(ctx)) return fail("You do not have the manage-access right.")
     const d = db()
     const u = d.users.find((x) => x.id === userId && x.status !== "deactivated")
     if (!u) return fail("Choose a user.")

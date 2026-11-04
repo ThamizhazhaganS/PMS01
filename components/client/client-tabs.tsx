@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 /** Empty client sections are hidden entirely (UX-06). */
-export function ClientTabs({ projectId, sections }: { projectId: string; sections: { journey: boolean; documents: boolean; decisions: boolean } }) {
+export function ClientTabs({ projectId, sections, needs = 0 }: { projectId: string; sections: { journey: boolean; documents: boolean; decisions: boolean }; needs?: number }) {
   const path = usePathname()
   const base = `/portal/projects/${projectId}`
   const tabs = [
-    { href: base, label: "Overview", show: true },
-    { href: `${base}/journey`, label: "Journey", show: sections.journey },
+    { href: base, label: "Overview", show: true, count: needs },
+    { href: `${base}/journey`, label: "Timeline", show: sections.journey },
     { href: `${base}/documents`, label: "Documents", show: sections.documents },
     { href: `${base}/decisions`, label: "Decisions & agreements", show: sections.decisions },
   ].filter((t) => t.show)
@@ -23,6 +23,7 @@ export function ClientTabs({ projectId, sections }: { projectId: string; section
             <li key={t.href}>
               <Link href={t.href} aria-current={active ? "page" : undefined} className={cn("inline-flex h-9 items-center rounded-lg px-3.5 text-sm text-muted-foreground transition hover:text-foreground", active && "bg-background font-medium text-foreground shadow-xs")}>
                 {t.label}
+                {!!t.count && <span className="ml-1.5 rounded-full bg-brand px-1.5 text-[10px] leading-4 font-semibold text-brand-foreground" aria-label={`${t.count} need you`}>{t.count}</span>}
               </Link>
             </li>
           )

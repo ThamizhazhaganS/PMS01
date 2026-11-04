@@ -18,6 +18,7 @@ import {
   publications,
   summary,
   threadViews,
+  timeView,
   userName,
   visibleAttachments,
 } from "@/lib/data"
@@ -30,6 +31,7 @@ import { CommentThreads } from "@/components/shared/comment-thread"
 import { RequestAccessButton, RequestCorrection, WithdrawChange } from "./client-controls"
 import { EstimateFilesPanel } from "@/components/staff/estimate-editor"
 import { cn } from "@/lib/utils"
+import { AtAGlance } from "@/components/shared/at-a-glance"
 
 /** Which client sections have content (UX-06: hide empty sections). */
 export function clientSections(ctx: AccessCtx) {
@@ -57,6 +59,7 @@ export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: Acc
           </p>
         </section>
       )}
+      <div className="lg:col-span-5"><AtAGlance t={timeView(ctx)} /></div>
       <section className="rounded-2xl border bg-card p-5 sm:p-7 lg:col-span-3" aria-labelledby="status-h">
         <div className="eyebrow" id="status-h">Where the project stands</div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -97,7 +100,7 @@ export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: Acc
           {readOnly ? (
             <ul className="divide-y rounded-lg border text-sm">{needs.length ? needs.map((n) => <li key={n.id} className="p-3">{n.title}<div className="text-xs text-muted-foreground">{n.detail}</div></li>) : <li className="p-3 text-muted-foreground">Nothing needs this user.</li>}</ul>
           ) : (
-            <NeedsList items={needs} openId={openApproval} emptyText="Nothing needs you right now. We'll email you when it does." />
+            <NeedsList items={needs} openId={openApproval} emptyText="Nothing needs you right now. We will email you when it does." />
           )}
         </section>
         {s.status?.nextSteps && (
@@ -124,7 +127,7 @@ export function ClientJourney({ ctx }: { ctx: AccessCtx }) {
   const bl = blockers(ctx).filter((b) => !b.resolvedAt)
   const paused = ctx.project.lifecycle === "paused"
   return (
-    <ol className="space-y-6" aria-label="Project journey">
+    <ol className="space-y-6" aria-label="Project timeline">
       {phases(ctx.project.id).map((ph) => {
         const pm = ms.filter((m) => m.phaseId === ph.id)
         if (pm.length === 0) return null
@@ -225,7 +228,7 @@ export function ClientDocuments({ ctx, readOnly }: { ctx: AccessCtx; readOnly?: 
             if ("restricted" in d)
               return (
                 <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
-                  <div className="flex items-center gap-2 text-sm"><Lock className="size-4 text-muted-foreground" /><div><div className="font-medium">Restricted item</div><div className="text-xs text-muted-foreground">{d.kind} · shared {fmtDate(d.publishedAt)} · named recipients only</div></div></div>
+                  <div className="flex items-center gap-2 text-sm"><Lock className="size-4 text-muted-foreground" /><div><div className="font-medium">Private item</div><div className="text-xs text-muted-foreground">{d.kind} · shared {fmtDate(d.publishedAt)} · named recipients only</div></div></div>
                   <RequestAccessButton projectId={ctx.project.id} docId={d.id} disabled={readOnly} />
                 </li>
               )
@@ -305,7 +308,7 @@ export function ClientDecisions({ ctx, readOnly }: { ctx: AccessCtx; readOnly?: 
       )}
 
       <section aria-labelledby="dec-h">
-        <h2 id="dec-h" className="mb-3 text-sm font-semibold">What we&apos;ve agreed</h2>
+        <h2 id="dec-h" className="mb-3 text-sm font-semibold">What we have agreed</h2>
         {decs.length === 0 ? <p className="text-sm text-muted-foreground">No decisions yet.</p> : (
           <ul className="divide-y rounded-xl border bg-card">
             {decs.map((d) => (

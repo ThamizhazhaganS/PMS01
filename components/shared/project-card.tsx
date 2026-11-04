@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 import { ArrowUpRight, CircleAlert, Clock } from "lucide-react"
 import type { summary } from "@/lib/data"
 import { ROLE_LABEL, fmtDate, fmtINR, relDays } from "@/lib/domain/rules"
@@ -10,7 +11,7 @@ type Summary = ReturnType<typeof summary>
 /** One card per project: status statement, health, next milestone, needs-you count (UX-01). */
 export function ProjectCard({ s, href, needs, showMoney, orgName, viewer = "staff" }: { s: Summary; href: string; needs?: number; showMoney?: boolean; orgName?: string; viewer?: "staff" | "client" }) {
   return (
-    <Link href={href} className="group flex flex-col rounded-xl border bg-card p-5 transition hover:border-foreground/20 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+    <Link href={href} className="glass-card group flex flex-col rounded-2xl p-5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="eyebrow">
@@ -19,7 +20,10 @@ export function ProjectCard({ s, href, needs, showMoney, orgName, viewer = "staf
           </div>
           <h3 className="mt-1 text-base leading-snug font-semibold">{s.project.name}</h3>
         </div>
-        <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition group-hover:text-foreground" aria-hidden />
+        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground transition duration-200 group-hover:text-foreground group-focus-visible:text-foreground">
+          <span className="translate-x-1 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">View project</span>
+          <ArrowUpRight className="size-4" aria-hidden />
+        </span>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <HealthBadge health={s.status?.health} />
@@ -49,6 +53,17 @@ export function ProjectCard({ s, href, needs, showMoney, orgName, viewer = "staf
           </dd>
           <dd className="text-xs text-muted-foreground">milestones accepted</dd>
         </div>
+        {s.time.usedPct !== undefined && (
+          <div className="col-span-2">
+            <dt className="eyebrow">Time used</dt>
+            <dd className="mt-1 flex items-center gap-2">
+              <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <span className={cn("block h-full rounded-full", s.time.usedPct > 100 ? "bg-bad" : s.time.usedPct >= 85 ? "bg-warn" : "bg-ok")} style={{ width: `${Math.min(100, s.time.usedPct)}%` }} />
+              </span>
+              <span className="text-xs tabular-nums text-muted-foreground">{s.time.usedPct}% of agreed time</span>
+            </dd>
+          </div>
+        )}
         {showMoney && s.approvedTotal !== undefined && (
           <div className="col-span-2">
             <dt className="eyebrow">Agreed cost</dt>

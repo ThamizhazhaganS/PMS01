@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 import { ArrowRight } from "lucide-react"
 import { ctxFor, orgById, projectsFor, summary } from "@/lib/data"
 import { attentionFor } from "@/lib/attention"
@@ -48,6 +49,7 @@ export default async function Portfolio() {
               <th className="p-3 font-medium">Responsible</th>
               <th className="p-3 font-medium">Next milestone</th>
               <th className="p-3 font-medium">Progress</th>
+              <th className="p-3 font-medium">Time used</th>
               <th className="p-3 text-center font-medium">Overdue approvals</th>
               <th className="p-3 text-center font-medium">Open changes</th>
               <th className="p-3 text-center font-medium">Blockers</th>
@@ -65,6 +67,7 @@ export default async function Portfolio() {
                 <td className="p-3 text-xs"><div className="font-medium">{r.owner?.name}</div><div className="text-muted-foreground">Client lead: {r.clientLeads.map((c) => c.name).join(", ") || "—"}</div></td>
                 <td className="p-3 text-xs">{r.next ? <><div className="font-medium">{r.next.name}</div><div className="text-muted-foreground">{fmtDate(r.next.currentDate)}</div></> : "—"}</td>
                 <td className="p-3 text-xs tabular-nums">{r.progress.accepted} of {r.progress.total} accepted</td>
+                <td className={cn("p-3 text-xs tabular-nums", r.time.usedPct !== undefined && r.time.usedPct > 100 && "text-bad")}>{r.time.usedPct !== undefined ? `${r.time.usedPct}% · ${Math.round(r.time.loggedHours).toLocaleString("en-IN")} of ${r.time.agreedHours!.toLocaleString("en-IN")} h` : "—"}</td>
                 <td className="p-3 text-center"><Count n={r.overdueApprovals.length} bad /></td>
                 <td className="p-3 text-center"><Count n={r.openChanges.length} /></td>
                 <td className="p-3 text-center"><Count n={r.openBlockers.length} bad /></td>

@@ -38,7 +38,7 @@ function Tile({ label, value, sub, tone }: { label: string; value: React.ReactNo
 /** The headline numbers, written for a 10-second read. */
 export function KpiRow({ t, showMoney }: { t: Totals; showMoney?: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
       <div className="col-span-2 rounded-xl border bg-card p-4 md:col-span-1 xl:col-span-2">
         <div className="eyebrow">Live projects · health</div>
         <div className="mt-1.5 flex items-baseline gap-3">
@@ -54,6 +54,14 @@ export function KpiRow({ t, showMoney }: { t: Totals; showMoney?: boolean }) {
       <Tile label="Waiting on client" value={t.pendingApprovals} sub={t.overdueApprovals ? <span className="text-bad">{t.overdueApprovals} overdue</span> : "none overdue"} tone={t.overdueApprovals ? "bad" : undefined} />
       <Tile label="Open blockers" value={t.openBlockers} sub={`${t.openChanges} open change request${t.openChanges === 1 ? "" : "s"}`} tone={t.openBlockers ? "warn" : undefined} />
       <Tile label="Milestones" value={`${t.accepted} / ${t.milestones}`} sub="accepted across projects" />
+      {t.agreedHours > 0 && (
+        <Tile
+          label="Time used"
+          value={`${Math.round((t.loggedHours / t.agreedHours) * 100)}%`}
+          sub={`${Math.round(t.loggedHours / 8).toLocaleString("en-IN")} of ${Math.round(t.agreedHours / 8).toLocaleString("en-IN")} agreed days`}
+          tone={t.loggedHours > t.agreedHours ? "bad" : t.loggedHours >= t.agreedHours * 0.85 ? "warn" : undefined}
+        />
+      )}
       {showMoney && <Tile label="Agreed value" value={<span className="text-xl">{fmtINR(t.agreedValue)}</span>} sub="from approved estimates" />}
     </div>
   )
@@ -63,7 +71,7 @@ export function KpiRow({ t, showMoney }: { t: Totals; showMoney?: boolean }) {
 export function OrgCard({ org, t, href, projectNames }: { org: { name: string; code: string }; t: Totals; href: string; projectNames: string[] }) {
   const attention = t.overdueApprovals + t.openBlockers + t.stale
   return (
-    <Link href={href} className="group flex flex-col rounded-xl border bg-card p-5 transition hover:border-foreground/25 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+    <Link href={href} className="glass-card group flex flex-col rounded-2xl p-5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"><Building2 className="size-5" aria-hidden /></span>
@@ -72,7 +80,10 @@ export function OrgCard({ org, t, href, projectNames }: { org: { name: string; c
             <p className="font-mono text-[11px] text-muted-foreground">{org.code} · {t.projects} project{t.projects === 1 ? "" : "s"}</p>
           </div>
         </div>
-        <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition group-hover:text-foreground" aria-hidden />
+        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground transition duration-200 group-hover:text-foreground group-focus-visible:text-foreground">
+          <span className="translate-x-1 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">View projects</span>
+          <ArrowUpRight className="size-4" aria-hidden />
+        </span>
       </div>
       <HealthBar health={t.health} className="mt-4" />
       <div className="mt-2 flex flex-wrap gap-x-3 text-xs">

@@ -18,6 +18,7 @@ import type {
   Project,
   Publication,
   StatusStatement,
+  TimeEntry,
   Thread,
   User,
   Workstream,
@@ -39,6 +40,7 @@ export interface DB {
   milestones: Milestone[]
   blockers: Blocker[]
   actions: ActionItem[]
+  timeEntries: TimeEntry[]
   documents: DocumentItem[]
   publications: Publication[]
   decisions: Decision[]

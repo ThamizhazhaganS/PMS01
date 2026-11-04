@@ -108,13 +108,13 @@ export function audienceLabel(a: Audience, wsName?: (id: string) => string) {
     case "draft":
       return "Draft"
     case "team":
-      return "Team"
+      return "Morphoverse team"
     case "workstream":
       return wsName ? `Workstream · ${wsName(a.workstreamId)}` : "Workstream"
     case "named":
-      return `Named · ${a.userIds.length}`
+      return `${a.userIds.length} named ${a.userIds.length === 1 ? "person" : "people"}`
     case "client":
-      return "Client-wide"
+      return "Everyone"
   }
 }
 

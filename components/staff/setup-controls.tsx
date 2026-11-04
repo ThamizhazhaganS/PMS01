@@ -32,7 +32,7 @@ export function AddMilestoneDialog({ projectId, phases, workstreams, members, cl
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Phase"><select className="field" value={f.phaseId} onChange={set("phaseId")}>{phases.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
             <Field label="Date"><input type="date" className="field" value={f.date} onChange={set("date")} /></Field>
-            <Field label="Audience"><select className="field" value={f.workstreamId} onChange={set("workstreamId")}><option value="">Client-wide</option>{workstreams.map((w) => <option key={w.id} value={w.id}>Workstream · {w.name}</option>)}</select></Field>
+            <Field label="Who can see it"><select className="field" value={f.workstreamId} onChange={set("workstreamId")}><option value="">Everyone</option>{workstreams.map((w) => <option key={w.id} value={w.id}>Workstream · {w.name}</option>)}</select></Field>
             <Field label="Acceptance"><select className="field" value={f.acceptance} onChange={set("acceptance")}><option value="client">Client acceptance</option><option value="internal">Internal acceptance</option></select></Field>
             <Field label="Owner"><select className="field" value={f.ownerId} onChange={set("ownerId")}>{members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></Field>
             <Field label="Client counterpart (optional)"><select className="field" value={f.counterpartId} onChange={set("counterpartId")}><option value="">None</option>{clients.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></Field>

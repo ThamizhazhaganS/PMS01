@@ -27,7 +27,7 @@ export function MilestoneActions(props: {
       {m.state === "planned" && <ActionButton size="xs" onRun={() => milestoneTransition(projectId, m.id, "in_progress")}>Start</ActionButton>}
       {(m.state === "in_progress" || m.state === "changes_requested") &&
         (m.acceptance === "client" ? (
-          props.canPublish ? <ReviewDialog {...props} /> : <span className="text-[11px] text-muted-foreground">Needs publish right</span>
+          props.canPublish ? <ReviewDialog {...props} /> : <span className="text-[11px] text-muted-foreground">Needs sharing permission</span>
         ) : (
           <ActionButton size="xs" onRun={() => milestoneTransition(projectId, m.id, "ready_for_review")}>Ready for review</ActionButton>
         ))}
@@ -71,7 +71,7 @@ function ReviewDialog({ projectId, m, approvers }: Parameters<typeof MilestoneAc
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
           <Button disabled={pending || sel.length === 0} onClick={() => run(() => milestoneTransition(projectId, m.id, "ready_for_review", sel), () => setOpen(false))}>
-            Request approval (Tier B)
+            Request approval
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -225,7 +225,7 @@ export function AddActionDialog({ projectId, people, audiences }: { projectId: s
             </Field>
             <Field label="Due (optional)"><input type="date" className="field" value={due} onChange={(e) => setDue(e.target.value)} /></Field>
           </div>
-          <Field label="Audience">
+          <Field label="Who can see it">
             <select className="field" value={aud} onChange={(e) => setAud(Number(e.target.value))}>
               {audiences.map((a, i) => <option key={i} value={i}>{a.label}</option>)}
             </select>

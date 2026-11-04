@@ -24,7 +24,7 @@ export default async function People({ params }: { params: Promise<{ projectId: 
   const cols: { label: string; aud: Audience }[] = [
     { label: "Team", aud: { kind: "team" } },
     ...ws.map((w) => ({ label: w.name, aud: { kind: "workstream", workstreamId: w.id } as Audience })),
-    { label: "Client-wide", aud: { kind: "client" } },
+    { label: "Everyone", aud: { kind: "client" } },
   ]
 
   return (
@@ -48,7 +48,7 @@ export default async function People({ params }: { params: Promise<{ projectId: 
 
       <Section
         title="Members & workstreams"
-        eyebrow={manage ? "You can manage access — every change is logged" : "Read only — you don't have manage-access"}
+        eyebrow={manage ? "You can manage access — every change is logged" : "Read only — you do not have manage-access"}
         action={
           manage && (
             <>
@@ -95,7 +95,7 @@ export default async function People({ params }: { params: Promise<{ projectId: 
         </div>
       </Section>
 
-      <Section title="Access matrix" eyebrow="Effective access per audience — computed by the same server rules">
+      <Section title="Access matrix" eyebrow="What each person can see on this project">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[40rem] text-sm">
             <thead>

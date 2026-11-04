@@ -23,6 +23,8 @@ export function totals(rows: Summary[]) {
     accepted: rows.reduce((s, r) => s + r.progress.accepted, 0),
     milestones: rows.reduce((s, r) => s + r.progress.total, 0),
     agreedValue: rows.reduce((s, r) => s + (r.approvedTotal ?? 0), 0),
+    agreedHours: live.reduce((s, r) => s + (r.time.agreedHours ?? 0), 0),
+    loggedHours: live.reduce((s, r) => s + (r.time.agreedHours ? r.time.loggedHours : 0), 0),
   }
 }
 

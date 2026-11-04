@@ -4,42 +4,170 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { newDocumentVersion, publishDraftPublication, retractDocument, retractPublication, revisePublication, setDocumentAudience, uploadDocument } from "@/lib/actions"
+import { FileText, Upload, X } from "lucide-react"
 import type { Audience } from "@/lib/domain/types"
+import type { Result } from "@/lib/actions"
+import { cn } from "@/lib/utils"
 import { ReasonDialog } from "@/components/shared/dialogs"
 import { Field } from "@/components/shared/ui"
 import { useAction } from "@/components/shared/use-action"
-import { type PickerData, PublishDialog } from "./audience-picker"
+import { AudiencePicker, type PickerData, PublishDialog, Recipients } from "./audience-picker"
 
-export function UploadDialog({ projectId }: { projectId: string }) {
+type DocKind = "deliverable" | "working" | "reference"
+const KINDS: { k: DocKind; label: string; hint: string }[] = [
+  { k: "deliverable", label: "Deliverable", hint: "Something we hand over" },
+  { k: "working", label: "Working file", hint: "Work in progress" },
+  { k: "reference", label: "Reference", hint: "Background material" },
+]
+const blocked = (name: string) => (/\.(exe|bat|cmd|js|scr)$/i.test(name) ? "This file type is not allowed" : null)
+
+/** One step: drop files, say what they are and who can see them. */
+export function UploadDialog({ projectId, data, canPublish }: { projectId: string; data: PickerData; canPublish: boolean }) {
   const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [file, setFile] = useState("")
-  const [kind, setKind] = useState<"deliverable" | "working" | "reference">("deliverable")
+  const [files, setFiles] = useState<{ name: string; title: string }[]>([])
+  const [kind, setKind] = useState<DocKind>("deliverable")
+  const [aud, setAud] = useState<Audience | null>({ kind: "draft" })
+  const [checked, setChecked] = useState(false)
+  const [over, setOver] = useState(false)
   const { pending, run } = useAction()
+  const reset = () => {
+    setFiles([])
+    setKind("deliverable")
+    setAud({ kind: "draft" })
+    setChecked(false)
+  }
+  const add = (list: FileList | null) => {
+    if (!list) return
+    const picked = [...list].map((f) => ({ name: f.name, title: f.name.replace(/\.[^.]+$/, "") }))
+    setFiles((cur) => [...cur, ...picked.filter((p) => !cur.some((c) => c.name === p.name))])
+  }
+  const sharing = !!aud && aud.kind !== "draft"
+  const ready = files.length > 0 && files.every((f) => f.title.trim() && !blocked(f.name)) && (!sharing || checked)
+  // Each file is uploaded as a Draft, then shared through the same checked step as "Publish…".
+  const upload = async (): Promise<Result> => {
+    for (const f of files) {
+      const r = await uploadDocument(projectId, { title: f.title, fileName: f.name, kind })
+      if (!r.ok) return { ok: false, error: `${f.name}: ${r.error}` }
+      if (sharing && r.id) {
+        const shared = await setDocumentAudience(projectId, r.id, aud!, true)
+        if (!shared.ok) return { ok: false, error: `${f.name} was saved as a Draft but not shared: ${shared.error}` }
+      }
+    }
+    const n = files.length
+    return { ok: true, message: `${n} file${n > 1 ? "s" : ""} uploaded${sharing ? " and shared" : " as a private Draft"}.` }
+  }
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>Upload document</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o)
+        if (!o) reset()
+      }}
+    >
+      <DialogTrigger render={<Button size="sm" variant="outline" />}>
+        <Upload /> Upload files
+      </DialogTrigger>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Upload a document</DialogTitle>
-          <DialogDescription>Uploads start as a private Draft (only you). Type and malware checks run first. Dev: a file name containing “eicar” is quarantined.</DialogDescription>
+          <DialogTitle>Upload files</DialogTitle>
+          <DialogDescription>Every file is checked for viruses before it is saved.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <Field label="Title"><input className="field" value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-          <Field label="File">
-            <input type="file" className="field pt-1.5" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setFile(f.name); if (!title) setTitle(f.name.replace(/\.[^.]+$/, "")) } }} />
-          </Field>
-          <Field label="Kind">
-            <select className="field" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
-              <option value="deliverable">Deliverable</option>
-              <option value="working">Working document</option>
-              <option value="reference">Reference</option>
-            </select>
-          </Field>
+        <div className="grid gap-5">
+          <label
+            onDragOver={(e) => {
+              e.preventDefault()
+              setOver(true)
+            }}
+            onDragLeave={() => setOver(false)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setOver(false)
+              add(e.dataTransfer.files)
+            }}
+            className={cn("flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed p-6 text-center transition hover:border-foreground/30", over && "border-brand bg-brand-soft/40")}
+          >
+            <Upload className="size-5 text-muted-foreground" />
+            <span className="text-sm font-medium">Drag files here, or click to choose</span>
+            <span className="text-xs text-muted-foreground">PDF, Word, Excel, PowerPoint and images</span>
+            <input
+              type="file"
+              multiple
+              className="sr-only"
+              onChange={(e) => {
+                add(e.target.files)
+                e.target.value = ""
+              }}
+            />
+          </label>
+
+          {files.length > 0 && (
+            <ul className="grid gap-2">
+              {files.map((f, i) => (
+                <li key={f.name} className="rounded-lg border p-2.5">
+                  <div className="flex items-center gap-2">
+                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                    <input aria-label={`Title for ${f.name}`} className="field h-8 flex-1" value={f.title} onChange={(e) => setFiles(files.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} />
+                    <Button size="icon-sm" variant="ghost" aria-label={`Remove ${f.name}`} onClick={() => setFiles(files.filter((_, j) => j !== i))}>
+                      <X />
+                    </Button>
+                  </div>
+                  <p className={cn("mt-1 truncate pl-6 text-xs", blocked(f.name) ? "text-bad" : "text-muted-foreground")}>
+                    {f.name}
+                    {blocked(f.name) && ` · ${blocked(f.name)}`}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div>
+            <p className="mb-2 text-xs font-medium">What is it?</p>
+            <div role="radiogroup" aria-label="File type" className="grid grid-cols-3 gap-2">
+              {KINDS.map((o) => (
+                <button key={o.k} type="button" role="radio" aria-checked={kind === o.k} onClick={() => setKind(o.k)} className={cn("rounded-lg border p-2 text-left transition hover:border-foreground/30", kind === o.k && "border-brand bg-brand-soft/60 ring-1 ring-brand")}>
+                  <span className="block text-sm font-medium">{o.label}</span>
+                  <span className="block text-[11px] text-muted-foreground">{o.hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <p className="text-xs font-medium">Who can see it?</p>
+            <AudiencePicker
+              data={data}
+              value={aud}
+              allowDraft
+              onChange={(a) => {
+                setAud(a)
+                setChecked(false)
+              }}
+            />
+            {sharing && (
+              <>
+                <Recipients data={data} audience={aud} />
+                <label className="flex items-start gap-2 text-sm">
+                  <input type="checkbox" className="mt-1 accent-[var(--brand)]" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+                  I have checked who will see this.
+                </label>
+              </>
+            )}
+            {!canPublish && <p className="text-xs text-muted-foreground">You can keep files as a Draft or share them with the Morphoverse team. Sharing with the client needs permission from the CEO.</p>}
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button disabled={pending || !file} onClick={() => run(() => uploadDocument(projectId, { title, fileName: file, kind }), () => { setOpen(false); setTitle(""); setFile("") })}>Upload as Draft</Button>
+          <Button
+            disabled={pending || !ready}
+            onClick={() =>
+              run(upload, () => {
+                setOpen(false)
+                reset()
+              })
+            }
+          >
+            {files.length > 1 ? `Upload ${files.length} files` : "Upload"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -103,7 +231,7 @@ export function PublicationActions({ projectId, pub, data, canPublish, isDirecto
       {pub.state === "draft" && canPublish && <PublishDialog data={data} title={pub.title} onPublish={(a, ok) => publishDraftPublication(projectId, pub.id, a, ok)} />}
       {pub.state === "published" && canPublish && <ReviseDialog projectId={projectId} id={pub.id} summary={pub.summary} />}
       {pub.state === "published" && isDirector && (
-        <ReasonDialog trigger="Retract" variant="ghost" size="xs" confirmVariant="destructive" title={`Retract “${pub.title}”`} description="Published records can't be deleted. Retraction hides content and leaves a notice." confirm="Retract" onSubmit={(r) => retractPublication(projectId, pub.id, r)} />
+        <ReasonDialog trigger="Retract" variant="ghost" size="xs" confirmVariant="destructive" title={`Retract “${pub.title}”`} description="Published records cannot be deleted. Retraction hides content and leaves a notice." confirm="Retract" onSubmit={(r) => retractPublication(projectId, pub.id, r)} />
       )}
     </div>
   )

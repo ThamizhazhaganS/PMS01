@@ -23,11 +23,11 @@ export function AudiencePicker({ data, value, onChange, allowDraft, allowNone }:
   const [named, setNamed] = useState<string[]>(value?.kind === "named" ? value.userIds : [])
   const kinds: { k: Kind | "none"; label: string; hint: string }[] = [
     ...(allowNone ? [{ k: "none" as const, label: allowNone, hint: "Stays private" }] : []),
-    ...(allowDraft ? [{ k: "draft" as const, label: "Draft", hint: "Only the author" }] : []),
-    { k: "team", label: "Team", hint: "Morphoverse only" },
-    { k: "workstream", label: "Workstream", hint: "That workstream's members" },
-    { k: "named", label: "Named", hint: "Only listed people" },
-    { k: "client", label: "Client-wide", hint: "Everyone on the project" },
+    ...(allowDraft ? [{ k: "draft" as const, label: "Draft", hint: "Only you, for now" }] : []),
+    { k: "team", label: "Morphoverse team", hint: "Our people only" },
+    { k: "workstream", label: "Workstream", hint: "People in one workstream" },
+    { k: "named", label: "Named people", hint: "Only the people you tick" },
+    { k: "client", label: "Everyone", hint: "Including the client" },
   ]
   const current: Kind | "none" = value ? value.kind : "none"
   const pick = (k: Kind | "none") => {
@@ -38,7 +38,7 @@ export function AudiencePicker({ data, value, onChange, allowDraft, allowNone }:
   }
   return (
     <div className="grid gap-2">
-      <div role="radiogroup" aria-label="Audience" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div role="radiogroup" aria-label="Who can see it" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {kinds.map((o) => (
           <button
             key={o.k}

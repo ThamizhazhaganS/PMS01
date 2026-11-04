@@ -59,7 +59,7 @@ describe("T-13 meeting records keep the real meeting date", () => {
     refused(await savePublication("p1", meeting({ audience: null }), true, true), /audience/)
     refused(await savePublication("p1", meeting(), true, false), /Confirm/)
     as("u-shrenik-team")
-    refused(await savePublication("p1", meeting(), true, true), /publish right/)
+    refused(await savePublication("p1", meeting(), true, true), /permission to share with the client/)
     ok(await savePublication("p1", meeting(), false, false)) // a draft is fine
   })
 })
@@ -217,7 +217,7 @@ describe("T-23 Ready for review is not Accepted", () => {
     refused(await milestoneTransition("p1", "m4", "accepted"), /client approver/)
     as("u-shrenik-team")
     ok(await milestoneTransition("p1", "m6", "in_progress"))
-    refused(await milestoneTransition("p1", "m6", "ready_for_review", ["u-diva"]), /publish right/)
+    refused(await milestoneTransition("p1", "m6", "ready_for_review", ["u-diva"]), /permission to share with the client/)
     as("u-sanjeev")
     refused(await milestoneTransition("p1", "m6", "ready_for_review", ["u-arjun"]), /approver/) // Arjun can't see an HR milestone
     ok(await milestoneTransition("p1", "m6", "ready_for_review", ["u-diva"]))

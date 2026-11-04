@@ -243,6 +243,7 @@ export function seed(): DB {
     milestones: [],
     blockers: [],
     actions: [],
+    timeEntries: [],
     documents: [],
     publications: [],
     decisions: [],
@@ -408,7 +409,7 @@ export function seed(): DB {
     },
     {
       id: "pub4", projectId: "p1", kind: "update", title: "Weekly update — week 10", publishedAt: dt(-4, 18), createdAt: dt(-4, 17),
-      summary: "HR TOM nearly ready. IT blueprint moved by ten days pending the asset inventory export (see Journey for reason).",
+      summary: "HR TOM nearly ready. IT blueprint moved by ten days pending the asset inventory export (see Timeline for the reason).",
       attendeeIds: [], decisionIds: [], actionIds: [], attachments: [], actionRequired: false, state: "published", version: 1, audience: CLIENT, authorId: "u-tashi",
     },
     {
@@ -428,7 +429,7 @@ export function seed(): DB {
   db.threads.push(
     { id: "th1", projectId: "p1", subject: { kind: "publication", id: "pub1" }, audience: "shared", purpose: "discussion", resolved: false, comments: [
       { id: "c1", authorId: "u-gulzer", body: "Thanks — can we get the slides in the deck format our board uses?", at: dt(-7, 10) },
-      { id: "c2", authorId: "u-tashi", body: "Yes, we'll reformat for the December board pack.", at: dt(-7, 12) },
+      { id: "c2", authorId: "u-tashi", body: "Yes, we will reformat for the December board pack.", at: dt(-7, 12) },
     ] },
     { id: "th2", projectId: "p1", subject: { kind: "publication", id: "pub1" }, audience: "team", purpose: "discussion", resolved: false, comments: [
       { id: "c3", authorId: "u-sanjeev", body: "Internal: board template is in the Gera brand kit folder.", at: dt(-7, 13) },
@@ -571,6 +572,24 @@ export function seed(): DB {
   log("p5", -55, "u-gulzer", "Approval decided", "Estimate v1 approved (Fresh sign-in + OTP)")
   log("p5", -5, "u-gulzer", "Approval decided", "Revised code of conduct accepted (one-click link)")
   log("p3", -20, "u-tashi", "Lifecycle changed", "Active → Paused: Site access for Chakan plant suspended")
+
+  // Hours logged by the team on weekdays (clients see only the totals).
+  const NOTES = ["Stakeholder interviews", "Workshop preparation", "Analysis and write-up", "Client meeting", "Data review", "Internal review"]
+  const logHours = (projectId: string, userIds: string[], from: number, to: number, perDay: number) => {
+    for (let off = from; off <= to; off++) {
+      const day = new Date(`${d(off)}T00:00:00Z`).getUTCDay()
+      if (day === 0 || day === 6) continue
+      userIds.forEach((userId, i) => {
+        const hours = Math.max(1, perDay - ((off + i) % 3) * 0.5)
+        db.timeEntries.push({ id: `te-${projectId}-${userId}-${-off}`, projectId, userId, date: d(off), hours, note: NOTES[(-off + i) % NOTES.length], createdAt: dt(off, 18) })
+      })
+    }
+  }
+  logHours("p1", ["u-sanjeev", "u-shrenik-team", "u-priyanka"], -72, -1, 7.5)
+  logHours("p1", ["u-tashi"], -72, -1, 2)
+  logHours("p3", ["u-shrenik-team"], -58, -21, 6)
+  logHours("p4", ["u-tashi"], -55, -1, 3)
+  logHours("p5", ["u-sanjeev", "u-priyanka"], -30, -1, 7)
 
   return db
 }

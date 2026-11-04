@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ChevronRight, CirclePause, OctagonAlert } from "lucide-react"
+import { ChevronRight, CirclePause, History, OctagonAlert } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
 import { orgById, statuses, userName } from "@/lib/data"
 import { isOwner, isProjectDirector } from "@/lib/access/audience"
@@ -38,9 +38,12 @@ export default async function ProjectLayout({ children, params }: { children: Re
             <LifecycleBadge lifecycle={p.lifecycle} />
             <HealthBadge health={st?.health} />
             <span className="text-xs text-muted-foreground">
-              Your role: {ctx.membership?.role.replace("_", " ")}
-              {ctx.membership?.role === "team" && (ctx.membership.publishRight ? " · can publish" : " · no publish right")}
+              Your role: {ctx.membership?.role === "owner" ? "Owner" : ctx.membership?.role === "team" ? "Team member" : ctx.membership?.role.replace("_", " ")}
+              {ctx.membership?.role === "team" && (ctx.membership.publishRight ? " · can share with the client" : " · cannot share with the client")}
             </span>
+            <Link href={`/w/projects/${p.id}/history`} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <History className="size-3.5" aria-hidden /> Change history
+            </Link>
           </div>
         </div>
         <LifecycleControls

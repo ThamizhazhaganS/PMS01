@@ -8,10 +8,9 @@ const TABS = [
   ["overview", "Overview"],
   ["plan", "Plan"],
   ["commercial", "Commercial"],
-  ["publications", "Publications"],
-  ["decisions", "Decisions"],
-  ["people", "People & Access"],
-  ["history", "History"],
+  ["publications", "Updates & files"],
+  ["decisions", "Approvals & decisions"],
+  ["people", "Team & access"],
 ] as const
 
 export function ProjectTabs({ projectId }: { projectId: string }) {
@@ -19,7 +18,7 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
   return (
     <nav aria-label="Project sections" className="-mx-4 overflow-x-auto border-b px-4 sm:mx-0 sm:px-0">
       <ul className="flex min-w-max gap-1">
-        {TABS.map(([slug, label], i) => {
+        {TABS.map(([slug, label]) => {
           const href = `/w/projects/${projectId}/${slug}`
           const active = path.startsWith(href)
           return (
@@ -32,7 +31,6 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
                   active && "font-medium text-foreground after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-full after:bg-foreground",
                 )}
               >
-                <span className="font-mono text-[10px] text-muted-foreground/70">{String(i + 1).padStart(2, "0")}</span>
                 {label}
               </Link>
             </li>

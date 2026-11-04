@@ -10,7 +10,7 @@ export function SearchPage({ user, q, action }: { user: User; q: string; action:
   return (
     <div className="max-w-3xl">
       <PageTitle eyebrow="Search" title={q ? <>Results for <em>“{q}”</em></> : "Search"}>
-        Only items shared with you are searched. Restricted items never appear, not even as a count.
+        Only items shared with you are searched. Items not shared with you never appear, not even as a count.
       </PageTitle>
       <form action={action} className="mb-6 flex gap-2" role="search">
         <label className="relative flex-1">

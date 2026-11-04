@@ -21,7 +21,7 @@ export default async function ClientHome() {
       )}
       <h2 className="mb-3 text-sm font-semibold">Projects</h2>
       {projects.length === 0 ? (
-        <Empty title="No projects to show yet" hint="You'll see a project here as soon as Morphoverse shares it with you." />
+        <Empty title="No projects to show yet" hint="You will see a project here as soon as Morphoverse shares it with you." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {projects.map((p) => (

@@ -1,5 +1,5 @@
 import { db } from "@/lib/store"
-import { getViewerId } from "@/lib/data"
+import { getViewerId, notificationsFor } from "@/lib/data"
 import { ROLE_LABEL } from "@/lib/domain/rules"
 import { DevBarClient } from "./dev-bar-client"
 
@@ -18,5 +18,6 @@ export async function DevBar() {
       status: u.status,
     }))
   const emails = [...d.emails].sort((a, b) => b.at.localeCompare(a.at))
-  return <DevBarClient users={users} currentId={currentId} emails={emails} />
+  const notes = notificationsFor(currentId).slice(0, 30)
+  return <DevBarClient users={users} currentId={currentId} emails={emails} notes={notes} digestOn={!d.digestOptOut[currentId]} />
 }

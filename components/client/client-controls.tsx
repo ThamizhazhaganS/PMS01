@@ -79,7 +79,7 @@ export function RequestCorrection({ projectId, pubId, disabled }: { projectId: s
 export function RequestAccessButton({ projectId, docId, disabled }: { projectId: string; docId: string; disabled?: boolean }) {
   if (disabled) return null
   return (
-    <ReasonDialog trigger="Request access" size="xs" title="Request access to a restricted item" description="The item owner decides. The request and decision are logged." label="Why do you need it?" confirm="Request access" onSubmit={(r) => requestAccess(projectId, docId, r)} />
+    <ReasonDialog trigger="Request access" size="xs" title="Ask for access to this item" description="The item owner decides. The request and decision are logged." label="Why do you need it?" confirm="Request access" onSubmit={(r) => requestAccess(projectId, docId, r)} />
   )
 }
 

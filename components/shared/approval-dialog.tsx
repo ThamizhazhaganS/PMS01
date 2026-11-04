@@ -50,7 +50,7 @@ export function ApprovalDialog({ view, defaultOpen, trigger }: { view: ApprovalV
           <div className="flex flex-wrap items-center gap-1.5">
             <Pill tone={view.tier === "A" ? "brand" : "muted"}>
               {view.tier === "A" ? <KeyRound className="size-3" /> : <ShieldCheck className="size-3" />}
-              {view.tier === "A" ? "Tier A · fresh verification" : "Tier B · one-click"}
+              {view.tier === "A" ? "Needs a one-time code" : "One-click approval"}
             </Pill>
             {view.overdue ? <Pill tone="bad">Overdue</Pill> : <Pill>Due {fmtDate(view.due)}</Pill>}
           </div>
@@ -104,7 +104,7 @@ export function ApprovalDialog({ view, defaultOpen, trigger }: { view: ApprovalV
             {outcome && view.tier === "A" && (
               <div className="rounded-lg border border-brand/30 bg-brand-soft/50 p-3">
                 <label className="grid gap-1.5 text-xs font-medium">
-                  Confirm it&apos;s you — enter the 6-digit code we just emailed
+                  Confirm it is you — enter the 6-digit code we just emailed
                   <input
                     className="field font-mono tracking-[0.4em]"
                     inputMode="numeric"

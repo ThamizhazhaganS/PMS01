@@ -47,7 +47,7 @@ export function MeetingWizard({ data, docs, canPublish }: { data: PickerData; do
       <option value="same">Same audience as record</option>
       <option value="team">Team only</option>
       {data.workstreams.map((w) => <option key={w.id} value={`ws:${w.id}`}>Workstream · {w.name}</option>)}
-      <option value="client">Client-wide</option>
+      <option value="client">Everyone</option>
     </>
   )
 
@@ -160,7 +160,7 @@ export function MeetingWizard({ data, docs, canPublish }: { data: PickerData; do
 
         {step === 4 && (
           <div className="grid gap-5">
-            <p className="text-sm text-muted-foreground">Attachments don&apos;t publish automatically. Give each file its own audience.</p>
+            <p className="text-sm text-muted-foreground">Attachments do not publish automatically. Give each file its own audience.</p>
             <div>
               <div className="mb-2 text-xs font-medium">Existing documents</div>
               <ul className="divide-y rounded-lg border">
@@ -227,13 +227,13 @@ export function MeetingWizard({ data, docs, canPublish }: { data: PickerData; do
             {step < STEPS.length - 1 ? (
               <Button onClick={() => setStep(step + 1)}>Next</Button>
             ) : (
-              <Button disabled={pending || !canPublish || !audience || !confirmed} onClick={() => submit(true)} title={canPublish ? undefined : "You need the publish right"}>
+              <Button disabled={pending || !canPublish || !audience || !confirmed} onClick={() => submit(true)} title={canPublish ? undefined : "You need permission to share with the client"}>
                 Publish
               </Button>
             )}
           </div>
         </div>
-        {!canPublish && step === STEPS.length - 1 && <p className="mt-2 text-right text-xs text-warn">You don&apos;t have the publish right. Save as Draft and the CEO can publish it.</p>}
+        {!canPublish && step === STEPS.length - 1 && <p className="mt-2 text-right text-xs text-warn">You do not have permission to share with the client. Save as Draft and the CEO can publish it.</p>}
       </div>
     </div>
   )

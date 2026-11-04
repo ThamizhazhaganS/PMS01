@@ -35,7 +35,7 @@ export default async function ViewAs({ params }: { params: Promise<{ projectId: 
         <Link href={`/w/projects/${projectId}/people`} className={buttonVariants({ size: "sm", variant: "outline" })}>Exit preview</Link>
       </div>
       <section aria-label="Overview"><h2 className="eyebrow mb-3">Overview</h2><ClientOverview ctx={tctx} readOnly base="#" /></section>
-      {sec.journey && <section aria-label="Journey"><h2 className="eyebrow mb-3">Journey</h2><div className="max-w-3xl"><ClientJourney ctx={tctx} /></div></section>}
+      {sec.journey && <section aria-label="Timeline"><h2 className="eyebrow mb-3">Timeline</h2><div className="max-w-3xl"><ClientJourney ctx={tctx} /></div></section>}
       {sec.documents && <section aria-label="Documents"><h2 className="eyebrow mb-3">Documents</h2><ClientDocuments ctx={tctx} readOnly /></section>}
       {sec.decisions && <section aria-label="Decisions"><h2 className="eyebrow mb-3">Decisions & agreements</h2><ClientDecisions ctx={tctx} readOnly /></section>}
       {!sec.journey && !sec.documents && !sec.decisions && <p className="text-sm text-muted-foreground">This user currently sees only the project shell.</p>}

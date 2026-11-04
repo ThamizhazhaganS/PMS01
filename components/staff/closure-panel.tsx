@@ -56,7 +56,7 @@ export function ClosurePanel({ ctx }: { ctx: AccessCtx }) {
         </div>
         <div className="space-y-4">
           <div>
-            <h3 className="eyebrow mb-2">Final acceptance (Tier A)</h3>
+            <h3 className="eyebrow mb-2">Final acceptance (needs a one-time code)</h3>
             {final ? (
               <div className="rounded-lg border p-3 text-sm">
                 <div className="flex items-center justify-between gap-2">

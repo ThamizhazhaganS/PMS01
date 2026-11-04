@@ -9,7 +9,8 @@ import { resetDemo, sendDigestNow, switchUser } from "@/lib/actions"
 import { Pill } from "@/components/shared/badges"
 import { useAction } from "@/components/shared/use-action"
 import { fmtDateTime } from "@/lib/domain/rules"
-import type { Email } from "@/lib/domain/types"
+import type { Email, Notification } from "@/lib/domain/types"
+import { NotificationBell } from "@/components/shared/app-header-client"
 
 export interface SwitchUser {
   id: string
@@ -20,7 +21,7 @@ export interface SwitchUser {
   status: string
 }
 
-export function DevBarClient({ users, currentId, emails }: { users: SwitchUser[]; currentId: string; emails: Email[] }) {
+export function DevBarClient({ users, currentId, emails, notes, digestOn }: { users: SwitchUser[]; currentId: string; emails: Email[]; notes: Notification[]; digestOn: boolean }) {
   const [pending, start] = useTransition()
   const queued = emails.filter((e) => e.status === "queued_digest").length
   return (
@@ -34,6 +35,7 @@ export function DevBarClient({ users, currentId, emails }: { users: SwitchUser[]
         <RoleSwitcher users={users} currentId={currentId} onPick={(id) => start(() => switchUser(id))} />
         {pending && <span className="text-white/50">switching…</span>}
         <div className="ml-auto flex items-center gap-1">
+          <NotificationBell items={notes} digestOn={digestOn} className="size-7 hover:bg-white/10" />
           <Outbox emails={emails} queued={queued} />
           <ThemeToggle />
           <button
@@ -158,7 +160,7 @@ function Outbox({ emails, queued }: { emails: Email[]; queued: number }) {
           {emails.map((e) => (
             <li key={e.id} className="rounded-lg border p-3">
               <div className="flex items-center justify-between gap-2">
-                <Pill tone={e.tier === 1 ? "bad" : "info"}>Tier {e.tier}</Pill>
+                <Pill tone={e.tier === 1 ? "bad" : "info"}>{e.tier === 1 ? "Urgent" : "Daily digest"}</Pill>
                 <span className="text-[11px] text-muted-foreground">
                   {e.status === "sent" ? "Sent" : e.status === "queued_digest" ? "Queued · digest" : "Sent in digest"}
                 </span>

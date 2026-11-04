@@ -12,9 +12,9 @@ import { useAction } from "@/components/shared/use-action"
 
 const PRESET_HINT: Partial<Record<UserKind, string>> = {
   director: "Full project access on projects they own",
-  team: "Collaborator — drafts only until the CEO grants publish right",
+  team: "Collaborator — drafts only until the CEO gives permission to share with the client",
   client_lead: "Approver preset — can be designated on approval requests",
-  client_stakeholder: "Workstream contributor — sees only their workstream + Client-wide",
+  client_stakeholder: "Workstream contributor — sees only their workstream and items shared with everyone",
   exec: "Portfolio oversight across the organisation (no Team content)",
 }
 

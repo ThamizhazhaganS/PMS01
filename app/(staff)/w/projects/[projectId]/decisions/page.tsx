@@ -19,7 +19,7 @@ export default async function Decisions({ params, searchParams }: { params: Prom
 
   return (
     <div className="space-y-5">
-      <Section title="Change requests" eyebrow="Triage → impact review → approval → implemented">
+      <Section title="Change requests" eyebrow="Raised → assessed → approved → done">
         {crs.length === 0 ? (
           <Empty title="No change requests" hint="Clients and team use “Request a change” on any item." />
         ) : (
@@ -74,7 +74,7 @@ export default async function Decisions({ params, searchParams }: { params: Prom
                   const v = approvalView(ctx, a)
                   return (
                     <tr key={a.id} className="border-b align-top last:border-0">
-                      <td className="py-2.5 pr-3"><div className="font-medium">{a.title}</div><div className="text-xs text-muted-foreground">Tier {a.tier} · rule: {a.rule} · requested by {userName(a.requestedBy)}</div></td>
+                      <td className="py-2.5 pr-3"><div className="font-medium">{a.title}</div><div className="text-xs text-muted-foreground">{a.tier === "A" ? "Needs a one-time code" : "One-click approval"} · {a.rule === "all" ? "everyone must approve" : "any one approver"} · requested by {userName(a.requestedBy)}</div></td>
                       <td className="py-2.5 pr-3 text-xs">{v.approverNames.join(", ")}{v.unavailable.length > 0 && <div className="text-bad">Approver unavailable: {v.unavailable.join(", ")}</div>}</td>
                       <td className="py-2.5 pr-3 text-xs tabular-nums">{fmtDate(a.due)}{v.overdue && <div><Pill tone="bad">Overdue</Pill></div>}</td>
                       <td className="py-2.5 pr-3"><ApprovalStateBadge state={a.state} /></td>
