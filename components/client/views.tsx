@@ -47,9 +47,9 @@ export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: Acc
   const needs = needsYou(ctx.user, ctx.project.id)
   const closure = ctx.project.closure
   return (
-    <div className="grid gap-5 lg:grid-cols-5">
+    <div className="grid gap-5 xl:grid-cols-5">
       {closure && (
-        <section className="rounded-xl border border-brand/30 bg-brand-soft/50 p-4 lg:col-span-5" aria-label="Closure">
+        <section className="rounded-xl border border-brand/30 bg-brand-soft/50 p-4 xl:col-span-5" aria-label="Closure">
           <p className="font-medium">
             {closure.finalizedAt ? `This engagement closed on ${fmtDate(closure.finalizedAt)}.` : "This engagement is in its closing phase."}
           </p>
@@ -59,8 +59,8 @@ export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: Acc
           </p>
         </section>
       )}
-      <div className="lg:col-span-5"><AtAGlance t={timeView(ctx)} /></div>
-      <section className="rounded-2xl border bg-card p-5 sm:p-7 lg:col-span-3" aria-labelledby="status-h">
+      <div className="xl:col-span-5"><AtAGlance t={timeView(ctx)} /></div>
+      <section className="rounded-2xl border bg-card p-5 sm:p-7 xl:col-span-3" aria-labelledby="status-h">
         <div className="eyebrow" id="status-h">Where the project stands</div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <HealthBadge health={s.status?.health} size="lg" />
@@ -92,7 +92,7 @@ export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: Acc
         </dl>
       </section>
 
-      <div className="space-y-5 lg:col-span-2">
+      <div className="space-y-5 xl:col-span-2">
         <section aria-labelledby="needs-h">
           <h2 id="needs-h" className="mb-2 flex items-center gap-2 text-sm font-semibold">
             Needs you {needs.length > 0 && <span className="rounded-full bg-brand px-2 text-xs leading-5 text-brand-foreground">{needs.length}</span>}
@@ -176,8 +176,8 @@ export function ClientDocuments({ ctx, readOnly }: { ctx: AccessCtx; readOnly?: 
   const decs = decisions(ctx)
   const acts = visibleActions(ctx)
   return (
-    <div className="grid gap-6 lg:grid-cols-5">
-      <section className="lg:col-span-3" aria-labelledby="records-h">
+    <div className="grid gap-6 xl:grid-cols-5">
+      <section className="xl:col-span-3" aria-labelledby="records-h">
         <h2 id="records-h" className="mb-3 text-sm font-semibold">Meeting records & updates</h2>
         {pubs.length === 0 && <p className="text-sm text-muted-foreground">Nothing has been shared with you yet.</p>}
         <ul className="space-y-3">
@@ -220,7 +220,7 @@ export function ClientDocuments({ ctx, readOnly }: { ctx: AccessCtx; readOnly?: 
           ))}
         </ul>
       </section>
-      <section className="lg:col-span-2" aria-labelledby="docs-h">
+      <section className="xl:col-span-2" aria-labelledby="docs-h">
         <h2 id="docs-h" className="mb-3 text-sm font-semibold">Documents</h2>
         <ul className="divide-y rounded-xl border bg-card">
           {docs.length === 0 && <li className="p-4 text-sm text-muted-foreground">No documents yet.</li>}

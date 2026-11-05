@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowUpRight, Ban, Building2, CircleDollarSign, Clock, PauseCircle, Stamp } from "lucide-react"
+import { Activity, ArrowUpRight, Ban, Building2, CircleDollarSign, Clock, Flag, type LucideIcon, PauseCircle, Stamp } from "lucide-react"
 import type { AttentionItem } from "@/lib/attention"
 import type { totals } from "@/lib/portfolio"
 import { fmtINR } from "@/lib/domain/rules"
@@ -24,45 +24,60 @@ export function HealthBar({ health, className }: { health: Totals["health"]; cla
   )
 }
 
-function Tile({ label, value, sub, tone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; tone?: "ok" | "warn" | "bad" | "brand" }) {
-  const c = { ok: "text-ok", warn: "text-warn", bad: "text-bad", brand: "text-brand" }[tone ?? "brand"]
+const TONE = { ok: "text-ok", warn: "text-warn", bad: "text-bad", brand: "text-brand" }
+const BAR = { ok: "bg-ok", warn: "bg-warn", bad: "bg-bad", brand: "bg-brand" }
+
+/** One big number, one line, and an optional bar: readable in a second. */
+function Tile({ icon: Icon, label, value, sub, tone, pct }: { icon: LucideIcon; label: string; value: React.ReactNode; sub?: React.ReactNode; tone?: keyof typeof TONE; pct?: number }) {
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="eyebrow">{label}</div>
-      <div className={cn("mt-1.5 text-2xl font-semibold tracking-tight tabular-nums", tone && c)}>{value}</div>
-      {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+    <div className="rounded-2xl border bg-card p-5">
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand"><Icon className="size-4" aria-hidden /></span>
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
+      </div>
+      <div className={cn("mt-4 text-3xl font-semibold tracking-tight tabular-nums", tone && TONE[tone])}>{value}</div>
+      {sub && <div className="mt-1 text-sm text-muted-foreground">{sub}</div>}
+      {pct !== undefined && (
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted" role="presentation">
+          <div className={cn("h-full rounded-full", BAR[tone ?? "brand"])} style={{ width: `${Math.min(100, pct)}%` }} />
+        </div>
+      )}
     </div>
   )
 }
 
 /** The headline numbers, written for a 10-second read. */
 export function KpiRow({ t, showMoney }: { t: Totals; showMoney?: boolean }) {
+  const timePct = t.agreedHours > 0 ? Math.round((t.loggedHours / t.agreedHours) * 100) : undefined
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
-      <div className="col-span-2 rounded-xl border bg-card p-4 md:col-span-1 xl:col-span-2">
-        <div className="eyebrow">Live projects · health</div>
-        <div className="mt-1.5 flex items-baseline gap-3">
-          <span className="text-2xl font-semibold tabular-nums">{t.live}</span>
-          <span className="flex flex-wrap gap-x-3 text-xs">
-            <span className="text-ok">{t.health.on_track} on track</span>
-            <span className="text-warn">{t.health.at_risk} at risk</span>
-            <span className="text-bad">{t.health.delayed} delayed</span>
-          </span>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="rounded-2xl border bg-card p-5">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand"><Activity className="size-4" aria-hidden /></span>
+          <span className="text-sm font-medium text-muted-foreground">Live projects</span>
         </div>
-        <HealthBar health={t.health} className="mt-3" />
+        <div className="mt-4 text-3xl font-semibold tracking-tight tabular-nums">{t.live}</div>
+        <div className="mt-1 flex flex-wrap gap-x-3 text-sm">
+          <span className="text-ok">{t.health.on_track} on track</span>
+          <span className="text-warn">{t.health.at_risk} at risk</span>
+          <span className="text-bad">{t.health.delayed} delayed</span>
+        </div>
+        <HealthBar health={t.health} className="mt-4 h-1.5" />
       </div>
-      <Tile label="Waiting on client" value={t.pendingApprovals} sub={t.overdueApprovals ? <span className="text-bad">{t.overdueApprovals} overdue</span> : "none overdue"} tone={t.overdueApprovals ? "bad" : undefined} />
-      <Tile label="Open blockers" value={t.openBlockers} sub={`${t.openChanges} open change request${t.openChanges === 1 ? "" : "s"}`} tone={t.openBlockers ? "warn" : undefined} />
-      <Tile label="Milestones" value={`${t.accepted} / ${t.milestones}`} sub="accepted across projects" />
-      {t.agreedHours > 0 && (
+      <Tile icon={Stamp} label="Waiting on client" value={t.pendingApprovals} sub={t.overdueApprovals ? <span className="text-bad">{t.overdueApprovals} overdue</span> : "None overdue"} tone={t.overdueApprovals ? "bad" : undefined} />
+      <Tile icon={Ban} label="Open blockers" value={t.openBlockers} sub={`${t.openChanges} open change request${t.openChanges === 1 ? "" : "s"}`} tone={t.openBlockers ? "warn" : undefined} />
+      <Tile icon={Flag} label="Milestones accepted" value={`${t.accepted} of ${t.milestones}`} sub="Across all projects" pct={t.milestones ? (t.accepted / t.milestones) * 100 : 0} />
+      {timePct !== undefined && (
         <Tile
+          icon={Clock}
           label="Time used"
-          value={`${Math.round((t.loggedHours / t.agreedHours) * 100)}%`}
+          value={`${timePct}%`}
           sub={`${Math.round(t.loggedHours / 8).toLocaleString("en-IN")} of ${Math.round(t.agreedHours / 8).toLocaleString("en-IN")} agreed days`}
-          tone={t.loggedHours > t.agreedHours ? "bad" : t.loggedHours >= t.agreedHours * 0.85 ? "warn" : undefined}
+          tone={timePct > 100 ? "bad" : timePct >= 85 ? "warn" : "ok"}
+          pct={timePct}
         />
       )}
-      {showMoney && <Tile label="Agreed value" value={<span className="text-xl">{fmtINR(t.agreedValue)}</span>} sub="from approved estimates" />}
+      {showMoney && <Tile icon={CircleDollarSign} label="Agreed value" value={fmtINR(t.agreedValue)} sub="From approved estimates" />}
     </div>
   )
 }

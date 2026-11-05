@@ -1,11 +1,11 @@
 import Link from "next/link"
-import { ChevronRight, CirclePause, History, OctagonAlert } from "lucide-react"
+import { ChevronRight, CirclePause, OctagonAlert } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
-import { orgById, statuses, userName } from "@/lib/data"
+import { approvals, orgById, statuses, userName } from "@/lib/data"
 import { isOwner, isProjectDirector } from "@/lib/access/audience"
 import { fmtDate, relDays } from "@/lib/domain/rules"
 import { HealthBadge, LifecycleBadge } from "@/components/shared/badges"
-import { ProjectTabs } from "@/components/staff/project-tabs"
+import { ProjectNav, type ProjectNavItem, SectionHeading } from "@/components/shared/project-nav"
 import { LifecycleControls } from "@/components/staff/lifecycle-controls"
 
 export default async function ProjectLayout({ children, params }: { children: React.ReactNode; params: Promise<{ projectId: string }> }) {
@@ -13,6 +13,17 @@ export default async function ProjectLayout({ children, params }: { children: Re
   const ctx = await staffProject(projectId)
   const p = ctx.project
   const st = statuses(ctx)[0]
+  const base = `/w/projects/${p.id}`
+  const pending = approvals(ctx).filter((a) => a.state === "pending").length
+  const nav: ProjectNavItem[] = [
+    { href: `${base}/overview`, label: "Overview", intro: "Where the project stands, what is next and who is involved.", icon: "overview" },
+    { href: `${base}/plan`, label: "Plan", intro: "Phases, milestones, blockers and actions, with their dates.", icon: "plan" },
+    { href: `${base}/commercial`, label: "Commercial", intro: "Estimates and their versions. Internal costs never reach the client.", icon: "commercial" },
+    { href: `${base}/publications`, label: "Updates & files", intro: "Meeting notes and files. Everything starts private until you share it.", icon: "files" },
+    { href: `${base}/decisions`, label: "Approvals & decisions", intro: "What is waiting for the client, what was agreed and change requests.", icon: "approvals", count: pending },
+    { href: `${base}/people`, label: "Team & access", intro: "Who is on the project and what each person can see.", icon: "team" },
+    { href: `${base}/history`, label: "Change history", intro: "Every change made on this project, with who made it and when.", icon: "history", secondary: true },
+  ]
   return (
     <div>
       <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
@@ -41,9 +52,6 @@ export default async function ProjectLayout({ children, params }: { children: Re
               Your role: {ctx.membership?.role === "owner" ? "Owner" : ctx.membership?.role === "team" ? "Team member" : ctx.membership?.role.replace("_", " ")}
               {ctx.membership?.role === "team" && (ctx.membership.publishRight ? " · can share with the client" : " · cannot share with the client")}
             </span>
-            <Link href={`/w/projects/${p.id}/history`} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <History className="size-3.5" aria-hidden /> Change history
-            </Link>
           </div>
         </div>
         <LifecycleControls
@@ -78,8 +86,13 @@ export default async function ProjectLayout({ children, params }: { children: Re
           </div>
         </div>
       )}
-      <ProjectTabs projectId={p.id} />
-      <div className="pt-6">{children}</div>
+      <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <ProjectNav items={nav} />
+        <div className="min-w-0 pt-6 lg:pt-0">
+          <SectionHeading items={nav} />
+          {children}
+        </div>
+      </div>
     </div>
   )
 }

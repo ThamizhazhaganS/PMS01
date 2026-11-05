@@ -1,5 +1,6 @@
 import type { timeView } from "@/lib/data"
 import { fmtDate, relDays, todayIso } from "@/lib/domain/rules"
+import { Clock, Handshake, Hourglass, ListChecks } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type TimeView = ReturnType<typeof timeView>
@@ -11,17 +12,17 @@ const asDays = (h: number, perDay: number) => fmtHours(Math.round((h / perDay) *
 export function AtAGlance({ t, action }: { t: TimeView; action?: React.ReactNode }) {
   const tone = t.usedPct === undefined ? "brand" : t.usedPct > 100 ? "bad" : t.usedPct >= 85 ? "warn" : "good"
   return (
-    <section className="rounded-xl border bg-card p-5" aria-labelledby="glance-h">
+    <section className="rounded-2xl border bg-card p-5 sm:p-6" aria-labelledby="glance-h">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 id="glance-h" className="eyebrow">Project at a glance</h2>
+        <h2 id="glance-h" className="text-base font-semibold">Project at a glance</h2>
         {action}
       </div>
-      <dl className="grid grid-cols-2 gap-5 md:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-6 md:grid-cols-4">
         <div>
-          <dt className="text-xs text-muted-foreground">Agreed time</dt>
+          <dt className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><span className="flex size-7 items-center justify-center rounded-lg bg-brand-soft text-brand"><Handshake className="size-3.5" aria-hidden /></span>Agreed time</dt>
           {t.agreedHours !== undefined ? (
             <>
-              <dd className="mt-1 text-lg font-semibold tabular-nums">{fmtHours(t.agreedDays!)} days</dd>
+              <dd className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">{fmtHours(t.agreedDays!)} days</dd>
               <dd className="text-xs text-muted-foreground tabular-nums">{fmtHours(t.agreedHours)} hours</dd>
             </>
           ) : (
@@ -29,15 +30,15 @@ export function AtAGlance({ t, action }: { t: TimeView; action?: React.ReactNode
           )}
         </div>
         <div>
-          <dt className="text-xs text-muted-foreground">Time used</dt>
-          <dd className="mt-1 text-lg font-semibold tabular-nums">{asDays(t.loggedHours, t.hoursPerDay)} days</dd>
+          <dt className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><span className="flex size-7 items-center justify-center rounded-lg bg-brand-soft text-brand"><Clock className="size-3.5" aria-hidden /></span>Time used</dt>
+          <dd className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">{asDays(t.loggedHours, t.hoursPerDay)} days</dd>
           <dd className="text-xs text-muted-foreground tabular-nums">{fmtHours(t.loggedHours)} hours{t.usedPct !== undefined && ` · ${t.usedPct}%`}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted-foreground">Time left</dt>
+          <dt className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><span className="flex size-7 items-center justify-center rounded-lg bg-brand-soft text-brand"><Hourglass className="size-3.5" aria-hidden /></span>Time left</dt>
           {t.leftHours !== undefined ? (
             <>
-              <dd className={cn("mt-1 text-lg font-semibold tabular-nums", t.leftHours < 0 && "text-bad")}>
+              <dd className={cn("mt-3 text-2xl font-semibold tracking-tight tabular-nums", t.leftHours < 0 && "text-bad")}>
                 {t.leftHours < 0 ? `${asDays(-t.leftHours, t.hoursPerDay)} days over` : `${asDays(t.leftHours, t.hoursPerDay)} days`}
               </dd>
               <dd className="text-xs text-muted-foreground tabular-nums">{fmtHours(Math.abs(t.leftHours))} hours{t.leftHours < 0 && " over the agreed time"}</dd>
@@ -47,8 +48,8 @@ export function AtAGlance({ t, action }: { t: TimeView; action?: React.ReactNode
           )}
         </div>
         <div>
-          <dt className="text-xs text-muted-foreground">Activities left</dt>
-          <dd className="mt-1 text-lg font-semibold tabular-nums">{t.milestonesLeft + t.actionsLeft}</dd>
+          <dt className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><span className="flex size-7 items-center justify-center rounded-lg bg-brand-soft text-brand"><ListChecks className="size-3.5" aria-hidden /></span>Activities left</dt>
+          <dd className="mt-3 text-2xl font-semibold tracking-tight tabular-nums">{t.milestonesLeft + t.actionsLeft}</dd>
           <dd className="text-xs text-muted-foreground">
             {t.milestonesLeft} milestone{t.milestonesLeft === 1 ? "" : "s"} · {t.actionsLeft} action{t.actionsLeft === 1 ? "" : "s"}
           </dd>

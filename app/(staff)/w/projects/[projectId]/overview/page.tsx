@@ -31,8 +31,8 @@ export default async function Overview({ params }: { params: Promise<{ projectId
   return (
     <div className="space-y-5">
     <ClosurePanel ctx={ctx} />
-    <div className="grid gap-5 lg:grid-cols-3">
-      <div className="space-y-5 lg:col-span-2">
+    <div className="grid gap-5 xl:grid-cols-3">
+      <div className="space-y-5 xl:col-span-2">
         <Section
           eyebrow="Status statement"
           title={st ? `By ${userName(st.authorId)} · ${fmtDate(st.at)}` : "No statement yet"}

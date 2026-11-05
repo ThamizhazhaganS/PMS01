@@ -4,7 +4,7 @@ import { canSubmitChange } from "@/lib/access/audience"
 import { LifecycleBadge } from "@/components/shared/badges"
 import { clientSections } from "@/components/client/views"
 import { RequestChangeButton } from "@/components/client/client-controls"
-import { ClientTabs } from "@/components/client/client-tabs"
+import { ProjectNav, type ProjectNavItem, SectionHeading } from "@/components/shared/project-nav"
 import { ClientBreadcrumb } from "@/components/client/project-switcher"
 
 export default async function ClientProjectLayout({ children, params }: { children: React.ReactNode; params: Promise<{ projectId: string }> }) {
@@ -15,6 +15,13 @@ export default async function ClientProjectLayout({ children, params }: { childr
   const exec = ctx.user.kind === "exec"
   const projects = projectsFor(ctx.user).map((p) => ({ id: p.id, name: p.name, code: p.code, href: `/portal/projects/${p.id}` }))
   const needs = needsYou(ctx.user, projectId).length
+  const base = `/portal/projects/${projectId}`
+  const nav: ProjectNavItem[] = [
+    { href: base, label: "Overview", intro: "Where the project stands and anything that needs you.", icon: "overview", exact: true, count: needs },
+    ...(sec.journey ? [{ href: `${base}/journey`, label: "Timeline", intro: "Each phase and milestone, with its dates and who is responsible.", icon: "timeline" as const }] : []),
+    ...(sec.documents ? [{ href: `${base}/documents`, label: "Documents", intro: "Reports, meeting notes and files Morphoverse has shared with you.", icon: "files" as const }] : []),
+    ...(sec.decisions ? [{ href: `${base}/decisions`, label: "Decisions & agreements", intro: "Estimates, change requests and decisions made together.", icon: "approvals" as const }] : []),
+  ]
   return (
     <div>
       <ClientBreadcrumb home={exec ? { href: "/exec", label: "Portfolio" } : { href: "/portal", label: "Home" }} projects={projects} currentId={projectId} />
@@ -26,8 +33,13 @@ export default async function ClientProjectLayout({ children, params }: { childr
         </div>
         {canSubmitChange(ctx) && ctx.project.lifecycle !== "proposal" && <RequestChangeButton projectId={projectId} decisions={decs} />}
       </div>
-      <ClientTabs projectId={projectId} sections={sec} needs={needs} />
-      <div className="pt-6">{children}</div>
+      <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <ProjectNav items={nav} />
+        <div className="min-w-0 pt-6 lg:pt-0">
+          <SectionHeading items={nav} />
+          {children}
+        </div>
+      </div>
     </div>
   )
 }
