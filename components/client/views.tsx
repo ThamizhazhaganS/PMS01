@@ -12,6 +12,7 @@ import {
   decisions,
   documents,
   estimates,
+  members,
   milestones,
   needsYou,
   phases,
@@ -29,9 +30,9 @@ import { NeedsList } from "@/components/shared/needs-list"
 import { EstimateBody } from "@/components/shared/estimate-view"
 import { CommentThreads } from "@/components/shared/comment-thread"
 import { RequestAccessButton, RequestCorrection, WithdrawChange } from "./client-controls"
+import { Initials } from "@/components/shared/ui"
 import { EstimateFilesPanel } from "@/components/staff/estimate-editor"
 import { cn } from "@/lib/utils"
-import { AtAGlance } from "@/components/shared/at-a-glance"
 
 /** Which client sections have content (UX-06: hide empty sections). */
 export function clientSections(ctx: AccessCtx) {
@@ -44,12 +45,19 @@ export function clientSections(ctx: AccessCtx) {
 
 export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: AccessCtx; readOnly?: boolean; openApproval?: string; base: string }) {
   const s = summary(ctx)
+  const t = timeView(ctx)
   const needs = needsYou(ctx.user, ctx.project.id)
   const closure = ctx.project.closure
+  const ms = milestones(ctx)
+  const steps = phases(ctx.project.id)
+    .filter((ph) => ms.some((m) => m.phaseId === ph.id))
+    .map((ph) => ({ id: ph.id, name: ph.name, status: phaseStatus(ph, ms) }))
+  const people = members(ctx.project.id).filter((m) => m.user.status === "active" && m.user.id !== ctx.user.id && (m.user.id === ctx.project.ownerId || m.membership.role === "client_lead"))
+  const files = documents(ctx).filter((d) => !("restricted" in d) && !d.retracted).slice(0, 3) as Exclude<ReturnType<typeof documents>[number], { restricted: true }>[]
   return (
-    <div className="grid gap-5 xl:grid-cols-5">
+    <div className="space-y-5">
       {closure && (
-        <section className="rounded-xl border border-brand/30 bg-brand-soft/50 p-4 xl:col-span-5" aria-label="Closure">
+        <section className="rounded-2xl border border-brand/30 bg-brand-soft/50 p-4" aria-label="Closure">
           <p className="font-medium">
             {closure.finalizedAt ? `This engagement closed on ${fmtDate(closure.finalizedAt)}.` : "This engagement is in its closing phase."}
           </p>
@@ -59,64 +67,105 @@ export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: Acc
           </p>
         </section>
       )}
-      <div className="xl:col-span-5"><AtAGlance t={timeView(ctx)} /></div>
-      <section className="rounded-2xl border bg-card p-5 sm:p-7 xl:col-span-3" aria-labelledby="status-h">
-        <div className="eyebrow" id="status-h">Where the project stands</div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+
+      <section className="rounded-2xl border bg-card p-5 sm:p-7" aria-labelledby="status-h">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 id="status-h" className="text-lg font-semibold tracking-tight">Your project is</h3>
           <HealthBadge health={s.status?.health} size="lg" />
-          {s.status && <span className="text-xs text-muted-foreground">Updated {relDays(s.status.at)} by {userName(s.status.authorId)}</span>}
         </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t.usedPct !== undefined && <>{t.usedPct}% of the agreed time used · </>}
+          {s.progress.accepted} of {s.progress.total} milestones done
+          {s.next && <> · next: <span className="text-foreground">{s.next.name}</span>, {fmtDate(s.next.currentDate)}</>}
+        </p>
         {s.status ? (
           <>
-            <p className="mt-4 text-xl leading-relaxed sm:text-2xl">{s.status.text}</p>
+            <p className="mt-5 text-lg leading-relaxed">{s.status.text}</p>
             {s.status.explanation && <p className="mt-3 border-l-2 border-warn pl-3 text-sm text-muted-foreground">{s.status.explanation}</p>}
+            <p className="mt-3 text-xs text-muted-foreground">Updated {relDays(s.status.at)} by {userName(s.status.authorId)}</p>
           </>
         ) : (
-          <p className="mt-4 text-muted-foreground">Morphoverse will post the first status update shortly.</p>
+          <p className="mt-5 text-muted-foreground">Morphoverse will post the first status update shortly.</p>
         )}
-        <dl className="mt-6 grid grid-cols-2 gap-5 border-t pt-5 sm:grid-cols-3">
-          <div>
-            <dt className="eyebrow">Next milestone</dt>
-            <dd className="mt-1 font-semibold">{s.next?.name ?? "—"}</dd>
-            {s.next && <dd className="text-sm text-muted-foreground tabular-nums">{fmtDate(s.next.currentDate)}</dd>}
+        {t.usedPct !== undefined && (
+          <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Agreed time used" aria-valuenow={t.usedPct} aria-valuemin={0} aria-valuemax={100}>
+            <div className={cn("h-full rounded-full", t.usedPct > 100 ? "bg-bad" : t.usedPct >= 85 ? "bg-warn" : "bg-ok")} style={{ width: `${Math.min(100, t.usedPct)}%` }} />
           </div>
-          <div>
-            <dt className="eyebrow">Progress</dt>
-            <dd className="mt-1 font-semibold tabular-nums">{s.progress.accepted} of {s.progress.total}</dd>
-            <dd className="text-sm text-muted-foreground">milestones accepted</dd>
-          </div>
-          <div className="col-span-2 sm:col-span-1">
-            <dt className="eyebrow">Expected completion</dt>
-            <dd className="mt-1 font-semibold">{fmtDate(s.expectedEnd ?? ctx.project.targetEnd)}</dd>
-          </div>
-        </dl>
+        )}
       </section>
 
-      <div className="space-y-5 xl:col-span-2">
-        <section aria-labelledby="needs-h">
-          <h2 id="needs-h" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            Needs you {needs.length > 0 && <span className="rounded-full bg-brand px-2 text-xs leading-5 text-brand-foreground">{needs.length}</span>}
-          </h2>
-          {readOnly ? (
-            <ul className="divide-y rounded-lg border text-sm">{needs.length ? needs.map((n) => <li key={n.id} className="p-3">{n.title}<div className="text-xs text-muted-foreground">{n.detail}</div></li>) : <li className="p-3 text-muted-foreground">Nothing needs this user.</li>}</ul>
+      <section aria-labelledby="needs-h">
+        <h3 id="needs-h" className="mb-2 flex items-center gap-2 text-base font-semibold">
+          Waiting for you {needs.length > 0 && <span className="rounded-full bg-brand px-2 text-xs leading-5 text-brand-foreground">{needs.length}</span>}
+        </h3>
+        {readOnly ? (
+          <ul className="divide-y rounded-lg border text-sm">{needs.length ? needs.map((n) => <li key={n.id} className="p-3">{n.title}<div className="text-xs text-muted-foreground">{n.detail}</div></li>) : <li className="p-3 text-muted-foreground">Nothing needs this user.</li>}</ul>
+        ) : (
+          <NeedsList items={needs} openId={openApproval} emptyText="Nothing needs you right now. We will email you when it does." />
+        )}
+      </section>
+
+      {steps.length > 0 && (
+        <section className="rounded-2xl border bg-card p-5" aria-labelledby="phases-h">
+          <div className="flex items-center justify-between gap-2">
+            <h3 id="phases-h" className="text-base font-semibold">Phases</h3>
+            <Link href={`${base}/journey`} className="text-xs text-brand hover:underline">See the timeline</Link>
+          </div>
+          <ol className="mt-4 flex gap-1.5" aria-label="Project phases">
+            {steps.map((p) => (
+              <li key={p.id} className="min-w-0 flex-1">
+                <div className={cn("h-1.5 rounded-full", p.status === "Complete" ? "bg-ok" : p.status === "In progress" ? "bg-brand" : "bg-muted")} aria-hidden />
+                <p className="mt-2 truncate text-xs font-medium">{p.name}</p>
+                <p className="text-[11px] text-muted-foreground">{p.status}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <section className="rounded-2xl border bg-card p-5" aria-labelledby="files-h">
+          <div className="flex items-center justify-between gap-2">
+            <h3 id="files-h" className="text-base font-semibold">Latest files</h3>
+            <Link href={`${base}/documents`} className="text-xs text-brand hover:underline">All documents</Link>
+          </div>
+          {files.length === 0 ? (
+            <p className="mt-2 text-sm text-muted-foreground">Files Morphoverse shares with you will appear here.</p>
           ) : (
-            <NeedsList items={needs} openId={openApproval} emptyText="Nothing needs you right now. We will email you when it does." />
+            <ul className="mt-2 divide-y">
+              {files.map((d) => (
+                <li key={d.id} className="flex items-center gap-3 py-2.5">
+                  <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-sm">{d.title}</span>
+                  <a href={`/api/files/${d.id}`} className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted" aria-label={`Download ${d.title}`}>
+                    <Download className="size-4" />
+                  </a>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
-        {s.status?.nextSteps && (
-          <section className="rounded-xl border bg-card p-4">
-            <h2 className="eyebrow mb-1.5">What Morphoverse is doing next</h2>
-            <p className="text-sm">{s.status.nextSteps}</p>
-          </section>
-        )}
-        {s.latest && (
-          <Link href={`${base}/documents`} className="block rounded-xl border bg-card p-4 transition hover:border-foreground/20">
-            <h2 className="eyebrow mb-1.5">Latest from Morphoverse</h2>
-            <p className="font-medium">{s.latest.title}</p>
-            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{s.latest.summary}</p>
-            <p className="mt-2 text-xs text-muted-foreground">{fmtDate(s.latest.publishedAt)}</p>
-          </Link>
-        )}
+
+        <section className="rounded-2xl border bg-card p-5" aria-labelledby="who-h">
+          <h3 id="who-h" className="text-base font-semibold">Who to contact</h3>
+          <ul className="mt-3 grid gap-3">
+            {people.map((m) => (
+              <li key={m.user.id} className="flex items-center gap-2.5 text-sm">
+                <Initials name={m.user.name} className="size-8 text-[11px]" />
+                <span>
+                  <span className="block font-medium">{m.user.name}</span>
+                  <span className="block text-xs text-muted-foreground">{m.user.id === ctx.project.ownerId ? "Responsible at Morphoverse" : "Your client lead"}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          {s.status?.nextSteps && (
+            <p className="mt-4 border-t pt-3 text-sm">
+              <span className="font-medium">Morphoverse next: </span>
+              <span className="text-muted-foreground">{s.status.nextSteps}</span>
+            </p>
+          )}
+        </section>
       </div>
     </div>
   )

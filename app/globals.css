@@ -169,11 +169,16 @@
     @apply h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 disabled:opacity-50;
   }
   textarea.field { @apply h-auto min-h-20 py-2; }
+  /* One font family: labels are quiet sentence-case text, titles are clean sans. */
   .eyebrow {
-    @apply font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase;
+    @apply text-xs font-medium text-muted-foreground;
   }
   .display {
-    @apply font-display font-normal tracking-tight;
+    @apply font-sans font-semibold tracking-tight;
+  }
+  /* The emphasised part of a title reads softer, not italic. */
+  .display em {
+    @apply font-semibold text-muted-foreground not-italic;
   }
 
   /*
