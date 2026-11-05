@@ -1,82 +1,80 @@
-import { ShieldCheck } from "lucide-react"
+import { CircleAlert, MailQuestion } from "lucide-react"
 import { db } from "@/lib/store"
 import { requireUser } from "@/lib/page-ctx"
-import { ROLE_LABEL, LIFECYCLE_LABEL } from "@/lib/domain/rules"
-import { Pill } from "@/components/shared/badges"
-import { PageTitle, Section } from "@/components/shared/ui"
-import { ConfirmCancelButton, InviteDialog, OrgDialog, SelfGrantButton, UserStatusButton } from "@/components/admin/admin-controls"
+import { ROLE_LABEL, LIFECYCLE_LABEL, fmtDate } from "@/lib/domain/rules"
+import { PageTitle } from "@/components/shared/ui"
+import { ConfirmCancelButton, InviteDialog } from "@/components/admin/admin-controls"
+import { AdminDirectory, NewMenu } from "@/components/admin/admin-directory"
 import { userName } from "@/lib/data"
-import Link from "next/link"
-import { buttonVariants } from "@/components/ui/button"
 
 export default async function Admin() {
   const admin = await requireUser(["admin"])
   const d = db()
   const orgs = d.orgs
   const projects = d.projects.map((p) => ({ id: p.id, name: p.name, code: p.code, orgId: p.clientOrgId, lifecycle: p.lifecycle, cancelRequest: ["cancelled", "closed", "archived"].includes(p.lifecycle) ? undefined : p.cancelRequest, workstreams: d.workstreams.filter((w) => w.projectId === p.id).map((w) => ({ id: w.id, name: w.name })) }))
+  const cancellations = projects.filter((p) => p.cancelRequest)
+  const invited = d.users.filter((u) => u.status === "invited")
+  // One person can hold two logins (e.g. Admin and Team member); say so instead of looking like a duplicate.
+  const sameName = (name: string) => d.users.filter((u) => u.name === name).length > 1
+
   return (
     <>
-      <PageTitle eyebrow="Morphoverse · Platform" title="Organisations & users" action={<div className="flex flex-wrap gap-2"><OrgDialog /><Link href="/admin/projects/new" className={buttonVariants({ size: "sm", variant: "outline" })}>New project</Link><InviteDialog orgs={orgs} projects={projects} /></div>}>
-        <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-4 text-ok" /> You manage accounts, not content. Project documents, meetings, estimates and comments are not visible here.</span>
+      <PageTitle
+        title="Organisations and users"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <NewMenu />
+            <InviteDialog orgs={orgs} projects={projects} />
+          </div>
+        }
+      >
+        Manage client organisations and who can sign in. Project content is never shown here.
       </PageTitle>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <Section title="Organisations" className="lg:col-span-1">
-          <ul className="divide-y">
-            {orgs.map((o) => (
-              <li key={o.id} className="flex items-center justify-between py-2.5">
-                <div>
-                  <div className="text-sm font-medium">{o.name}</div>
-                  <div className="text-xs text-muted-foreground">{o.kind === "agency" ? "Consulting firm" : "Client organisation"} · {d.users.filter((u) => u.orgId === o.id).length} users · {d.projects.filter((p) => p.clientOrgId === o.id).length} projects</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Section>
-
-        <Section title="Project shells" eyebrow="Name and state only" className="lg:col-span-2">
-          <ul className="divide-y">
-            {projects.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">{p.code} · {orgs.find((o) => o.id === p.orgId)?.name} · {LIFECYCLE_LABEL[p.lifecycle]}</div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {p.cancelRequest && <ConfirmCancelButton projectId={p.id} />}
-                  <SelfGrantButton projectId={p.id} granted={d.memberships.some((m) => m.projectId === p.id && m.userId === admin.id)} />
-                </div>
-                {p.cancelRequest && (
-                  <p className="w-full rounded-md bg-bad-soft p-2 text-xs">
-                    <b>Cancellation requested</b> by {userName(p.cancelRequest.by)}: “{p.cancelRequest.reason}” — your confirmation is the second check.
+      {(cancellations.length > 0 || invited.length > 0) && (
+        <section className="mb-5 rounded-2xl border border-warn/40 bg-warn-soft/40 p-5" aria-labelledby="todo-h">
+          <h2 id="todo-h" className="text-base font-semibold">Needs your action</h2>
+          <ul className="mt-2 divide-y divide-warn/20">
+            {cancellations.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center gap-3 py-3">
+                <CircleAlert className="size-4 shrink-0 text-bad" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">Cancel {p.name}?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Requested by {userName(p.cancelRequest!.by)} on {fmtDate(p.cancelRequest!.at)}: “{p.cancelRequest!.reason}”. Your confirmation is the second check.
                   </p>
-                )}
+                </div>
+                <ConfirmCancelButton projectId={p.id} />
+              </li>
+            ))}
+            {invited.map((u) => (
+              <li key={u.id} className="flex flex-wrap items-center gap-3 py-3">
+                <MailQuestion className="size-4 shrink-0 text-info" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{u.name} has not accepted the invitation yet</p>
+                  <p className="text-xs text-muted-foreground">{u.email} · {ROLE_LABEL[u.kind]} · invitations expire after 7 days</p>
+                </div>
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-muted-foreground">Self-granting access is logged as a security event and alerts the project&apos;s CEO immediately.</p>
-        </Section>
-      </div>
+        </section>
+      )}
 
-      <Section title={`Users (${d.users.length})`} className="mt-5">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] text-sm">
-            <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2 font-medium">User</th><th className="py-2 font-medium">Organisation</th><th className="py-2 font-medium">Role</th><th className="py-2 font-medium">Projects</th><th className="py-2 font-medium">Status</th><th /></tr></thead>
-            <tbody>
-              {d.users.map((u) => (
-                <tr key={u.id} className="border-b last:border-0">
-                  <td className="py-2.5 pr-3"><div className="font-medium">{u.name}</div><div className="text-xs text-muted-foreground">{u.email}</div></td>
-                  <td className="py-2.5 pr-3 text-xs">{orgs.find((o) => o.id === u.orgId)?.name}</td>
-                  <td className="py-2.5 pr-3 text-xs">{ROLE_LABEL[u.kind]}</td>
-                  <td className="py-2.5 pr-3 text-xs">{d.memberships.filter((m) => m.userId === u.id).length}</td>
-                  <td className="py-2.5 pr-3"><Pill tone={u.status === "active" ? "ok" : u.status === "invited" ? "info" : "bad"}>{u.status}</Pill></td>
-                  <td className="py-2.5 text-right">{u.id !== admin.id && <UserStatusButton id={u.id} status={u.status} />}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Section>
+      <AdminDirectory
+        adminId={admin.id}
+        orgs={orgs.map((o) => ({ id: o.id, name: o.name, kind: o.kind, users: d.users.filter((u) => u.orgId === o.id).length, projects: d.projects.filter((p) => p.clientOrgId === o.id).length }))}
+        users={d.users.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          orgId: u.orgId,
+          role: ROLE_LABEL[u.kind],
+          projects: d.memberships.filter((m) => m.userId === u.id).length,
+          status: u.status,
+          note: sameName(u.name) ? `${ROLE_LABEL[u.kind]} login` : undefined,
+        }))}
+        projects={projects.map((p) => ({ id: p.id, name: p.name, code: p.code, orgId: p.orgId, state: LIFECYCLE_LABEL[p.lifecycle], granted: d.memberships.some((m) => m.projectId === p.id && m.userId === admin.id) }))}
+      />
     </>
   )
 }
