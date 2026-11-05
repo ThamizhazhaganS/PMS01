@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { adminConfirmCancel, createOrganisation, inviteUser } from "@/lib/actions"
+import { adminConfirmCancel, adminSelfGrant, createOrganisation, inviteUser, setUserStatus } from "@/lib/actions"
 import type { UserKind } from "@/lib/domain/types"
 import { ROLE_LABEL } from "@/lib/domain/rules"
 import { ActionButton } from "@/components/shared/dialogs"
@@ -77,18 +77,28 @@ export function InviteDialog({ orgs, projects }: { orgs: { id: string; name: str
   )
 }
 
-/** Pass `open` and `onOpenChange` to open it from elsewhere (e.g. a menu); otherwise it has its own button. */
-export function OrgDialog({ open: openProp, onOpenChange }: { open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
-  const [ownOpen, setOwnOpen] = useState(false)
-  const controlled = openProp !== undefined
-  const open = controlled ? openProp : ownOpen
-  const setOpen = (o: boolean) => (controlled ? onOpenChange?.(o) : setOwnOpen(o))
+export function UserStatusButton({ id, status }: { id: string; status: string }) {
+  if (status === "invited") return <span className="text-xs text-muted-foreground">Invitation pending</span>
+  return status === "active" ? (
+    <ActionButton size="xs" variant="destructive" onRun={() => setUserStatus(id, "deactivated")}>Deactivate</ActionButton>
+  ) : (
+    <ActionButton size="xs" onRun={() => setUserStatus(id, "active")}>Reactivate</ActionButton>
+  )
+}
+
+export function SelfGrantButton({ projectId, granted }: { projectId: string; granted: boolean }) {
+  if (granted) return <span className="text-xs text-bad">Self-granted (alerted)</span>
+  return <ActionButton size="xs" variant="ghost" onRun={() => adminSelfGrant(projectId)}>Self-grant access…</ActionButton>
+}
+
+export function OrgDialog() {
+  const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [code, setCode] = useState("")
   const { pending, run } = useAction()
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {!controlled && <DialogTrigger render={<Button size="sm" variant="outline" />}>New organisation</DialogTrigger>}
+      <DialogTrigger render={<Button size="sm" variant="outline" />}>New organisation</DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>New client organisation</DialogTitle>
