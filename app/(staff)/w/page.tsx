@@ -1,64 +1,81 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Plus } from "lucide-react"
-import { needsYou, orgById } from "@/lib/data"
-import { attentionFor } from "@/lib/attention"
 import { portfolioByOrg } from "@/lib/portfolio"
+import { attentionMerged, weekStrip } from "@/lib/dashboard"
 import { requireUser } from "@/lib/page-ctx"
-import { NeedsList } from "@/components/shared/needs-list"
-import { Empty, PageTitle, Section } from "@/components/shared/ui"
-import { AttentionList, KpiRow, OrgCard } from "@/components/staff/dashboard"
+import { LIFECYCLE_LABEL } from "@/lib/domain/rules"
+import { Empty } from "@/components/shared/ui"
+import { AttentionPanel, Headlines, WeekStrip } from "@/components/staff/ceo-dashboard"
+import { CeoOrgExplorer } from "@/components/staff/ceo-org-explorer"
 import { buttonVariants } from "@/components/ui/button"
 
-/** CEO home: dashboard first, then organisations → projects. */
+const greeting = () => {
+  const h = Number(new Date().toLocaleString("en-GB", { hour: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }))
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"
+}
+
+/** CEO home: the day's numbers, this week's milestones, then clients → projects. */
 export default async function Dashboard() {
   const user = await requireUser(["director", "team"])
   // The dashboard is the CEO's view; Team Members land on their projects.
   if (user.kind !== "director") redirect("/w/projects")
   const { orgs, totals } = portfolioByOrg(user)
-  const attention = attentionFor(user)
-  const needs = needsYou(user)
-  const orgName = (id: string) => orgById(id)?.name ?? ""
+  const week = weekStrip(user)
+  const attention = attentionMerged(user)
+  const clients = orgs.length
 
   return (
     <>
-      <PageTitle
-        eyebrow="Morphoverse · Dashboard"
-        title={<>Good to see you, <em>{user.name.split(" ")[0]}</em>.</>}
-        action={
-          <div className="flex flex-wrap gap-2">
-            <Link href="/w/projects" className={buttonVariants({ variant: "outline" })}>All projects</Link>
-            {user.kind === "director" && <Link href="/w/new" className={buttonVariants()}><Plus /> New project</Link>}
-          </div>
-        }
-      >
-        Across the {orgs.length} client organisation{orgs.length === 1 ? "" : "s"} and {totals.projects} project{totals.projects === 1 ? "" : "s"} you are part of.
-      </PageTitle>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="display text-3xl leading-tight sm:text-4xl">
+            {greeting()}, <em>{user.name.split(" ")[0]}</em>
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {totals.live} live project{totals.live === 1 ? "" : "s"} across {clients} client{clients === 1 ? "" : "s"}
+            {totals.health.delayed > 0 && <> · <span className="text-bad">{totals.health.delayed} delayed</span></>}
+            {totals.health.at_risk > 0 && <> · <span className="text-warn">{totals.health.at_risk} at risk</span></>}
+            {" · "}
+            {totals.pendingApprovals} waiting on the client
+          </p>
+        </div>
+        <Link href="/w/new" className={buttonVariants()}>
+          <Plus /> New project
+        </Link>
+      </div>
 
       {orgs.length === 0 ? (
-        <Empty title="No engagements yet" hint="The CEO adds you to a project when you join its team." />
+        <Empty title="No engagements yet" hint="Create the first project to see it here." />
       ) : (
-        <div className="space-y-6">
-          <KpiRow t={totals} showMoney />
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            <section className="lg:col-span-2" aria-labelledby="orgs-h">
-              <h2 id="orgs-h" className="mb-3 text-sm font-semibold">Organisations</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {orgs.map(({ org, rows, totals: t }) => (
-                  <OrgCard key={org.id} org={org} t={t} href={`/w/orgs/${org.id}`} projectNames={rows.map((r) => r.project.name)} />
-                ))}
-              </div>
-            </section>
-            <div className="space-y-6">
-              <Section title={`Needs attention (${attention.length})`}>
-                <AttentionList items={attention} orgName={orgName} />
-              </Section>
-              <Section title={`Needs me (${needs.length})`}>
-                <NeedsList items={needs.slice(0, 4)} showProject />
-                {needs.length > 4 && <Link href="/w/needs-me" className="mt-2 inline-block text-xs text-brand hover:underline">See all {needs.length}</Link>}
-              </Section>
-            </div>
+        <div className="space-y-5">
+          <Headlines t={totals} />
+          <WeekStrip days={week.days} count={week.count} />
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <CeoOrgExplorer
+              orgs={orgs.map(({ org, rows, totals: t }) => {
+                const care = t.health.at_risk + t.health.delayed
+                return {
+                  id: org.id,
+                  name: org.name,
+                  summary: `${t.projects} project${t.projects === 1 ? "" : "s"} · ${care ? `${care} need${care === 1 ? "s" : ""} care` : "all on track"}`,
+                  projects: rows.map((r) => ({
+                    id: r.project.id,
+                    name: r.project.name,
+                    health: r.status?.health,
+                    note:
+                      r.project.lifecycle !== "active"
+                        ? LIFECYCLE_LABEL[r.project.lifecycle]
+                        : r.time.usedPct !== undefined
+                          ? `${r.time.usedPct}% time used`
+                          : "No estimate yet",
+                    over: r.project.lifecycle === "active" && (r.time.usedPct ?? 0) > 100,
+                    href: `/w/projects/${r.project.id}/overview`,
+                  })),
+                }
+              })}
+            />
+            <AttentionPanel rows={attention} />
           </div>
         </div>
       )}
