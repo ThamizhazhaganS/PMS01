@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/page-ctx"
 import { ROLE_LABEL, LIFECYCLE_LABEL } from "@/lib/domain/rules"
 import { Pill } from "@/components/shared/badges"
 import { PageTitle, Section } from "@/components/shared/ui"
-import { ConfirmCancelButton, InviteDialog, OrgDialog, SelfGrantButton, UserStatusButton } from "@/components/admin/admin-controls"
+import { InviteDialog, OrgDialog, UserStatusButton } from "@/components/admin/admin-controls"
+import { OrgExplorer } from "@/components/admin/org-explorer"
 import { userName } from "@/lib/data"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
@@ -20,43 +21,25 @@ export default async function Admin() {
         <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-4 text-ok" /> You manage accounts, not content. Project documents, meetings, estimates and comments are not visible here.</span>
       </PageTitle>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <Section title="Organisations" className="lg:col-span-1">
-          <ul className="divide-y">
-            {orgs.map((o) => (
-              <li key={o.id} className="flex items-center justify-between py-2.5">
-                <div>
-                  <div className="text-sm font-medium">{o.name}</div>
-                  <div className="text-xs text-muted-foreground">{o.kind === "agency" ? "Consulting firm" : "Client organisation"} · {d.users.filter((u) => u.orgId === o.id).length} users · {d.projects.filter((p) => p.clientOrgId === o.id).length} projects</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Section>
-
-        <Section title="Project shells" eyebrow="Name and state only" className="lg:col-span-2">
-          <ul className="divide-y">
-            {projects.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">{p.code} · {orgs.find((o) => o.id === p.orgId)?.name} · {LIFECYCLE_LABEL[p.lifecycle]}</div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {p.cancelRequest && <ConfirmCancelButton projectId={p.id} />}
-                  <SelfGrantButton projectId={p.id} granted={d.memberships.some((m) => m.projectId === p.id && m.userId === admin.id)} />
-                </div>
-                {p.cancelRequest && (
-                  <p className="w-full rounded-md bg-bad-soft p-2 text-xs">
-                    <b>Cancellation requested</b> by {userName(p.cancelRequest.by)}: “{p.cancelRequest.reason}” — your confirmation is the second check.
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-xs text-muted-foreground">Self-granting access is logged as a security event and alerts the project&apos;s CEO immediately.</p>
-        </Section>
-      </div>
+      <OrgExplorer
+        orgs={orgs.map((o) => ({
+          id: o.id,
+          name: o.name,
+          code: o.code,
+          kind: o.kind === "agency" ? "Consulting firm" : "Client organisation",
+          people: d.users.filter((u) => u.orgId === o.id).map((u) => ({ id: u.id, name: u.name, role: ROLE_LABEL[u.kind] })),
+          projects: projects
+            .filter((p) => p.orgId === o.id)
+            .map((p) => ({
+              id: p.id,
+              name: p.name,
+              code: p.code,
+              state: LIFECYCLE_LABEL[p.lifecycle],
+              granted: d.memberships.some((m) => m.projectId === p.id && m.userId === admin.id),
+              cancelRequest: p.cancelRequest && { by: userName(p.cancelRequest.by), reason: p.cancelRequest.reason },
+            })),
+        }))}
+      />
 
       <Section title={`Users (${d.users.length})`} className="mt-5">
         <div className="overflow-x-auto">

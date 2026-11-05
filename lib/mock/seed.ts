@@ -64,6 +64,16 @@ export function seed(): DB {
       { id: "org-morph", name: "Morphoverse", kind: "agency", code: "MV" },
       { id: "org-nova", name: "Gera Development", kind: "client", code: "GERA", primaryContactId: "u-gulzer" },
       { id: "org-helix", name: "Helix Retail", kind: "client", code: "HLX", primaryContactId: "u-emma" },
+      // Example clients with no projects yet, so long organisation lists can be tried out.
+      { id: "org-aurora", name: "Aurora Pharma", kind: "client", code: "AUR" },
+      { id: "org-bluepeak", name: "Bluepeak Logistics", kind: "client", code: "BPL" },
+      { id: "org-cedar", name: "Cedar Hospitals", kind: "client", code: "CDR" },
+      { id: "org-deltaforge", name: "Deltaforge Steel", kind: "client", code: "DFS" },
+      { id: "org-evergreen", name: "Evergreen Foods", kind: "client", code: "EVG" },
+      { id: "org-finch", name: "Finch Capital", kind: "client", code: "FNC" },
+      { id: "org-granite", name: "Granite Infra", kind: "client", code: "GRI" },
+      { id: "org-horizon", name: "Horizon Telecom", kind: "client", code: "HZT" },
+      { id: "org-indigo", name: "Indigo Textiles", kind: "client", code: "IDT" },
     ],
     users: [
       { id: "u-admin", name: "Shrenik", email: "shrenik.admin@morphoverse.com", orgId: "org-morph", kind: "admin", title: "Admin", status: "active" },
@@ -566,9 +576,18 @@ export function seed(): DB {
   log("p1", -8, "u-tashi", "Published", "Meeting record 'Steering Committee #2' → Client-wide")
   log("p1", -4, "u-tashi", "Date changed", "IT systems landscape blueprint: current date moved +10 days (linked to blocker B-1)")
   log("p1", -2, "u-sanjeev", "Approval requested", "HR target operating model → Gulzer (Tier B)")
-  log("p1", -1, "u-rohit", "Access requested", "Executive compensation benchmarks (Named) — reason recorded")
+  log("p1", -1, "u-rohit", "Access requested", "Executive compensation benchmarks (Named) — reason recorded", true)
   log(undefined, -14, "u-admin", "User invited", "arjun.nair@geradevelopment.com invited with preset 'Workstream contributor'", true)
   log(undefined, -3, "unknown", "Failed sign-in", "3 failed OTP attempts for priya.patel@geradevelopment.com", true)
+  // More security events so every view of the Security log has something to show.
+  log(undefined, -60, "u-admin", "User invited", "emma.brooks@helixretail.com invited with preset 'Client lead'", true)
+  log("p1", -70, "u-tashi", "Access granted", "Arjun Nair added to workstream IT Systems", true)
+  log("p1", -40, "u-tashi", "Access granted", "Permission to share with the client given to Priyanka", true)
+  log("p5", -28, "u-tashi", "Access granted", "Priyanka added as team member", true)
+  log("p1", -6, "u-tashi", "View As session", "Viewed the project as Gulzer (Client lead)", true)
+  log("p4", -9, "u-tashi", "Access revoked", "Sanjeev removed from project; 0 approvals affected", true)
+  log("p3", -12, "u-gulzer", "Access requested", "Site inspection photos (Named): needed for the plant safety review", true)
+  log("p3", -11, "u-tashi", "Access granted", "Gulzer → Site inspection photos", true)
   log("p5", -55, "u-gulzer", "Approval decided", "Estimate v1 approved (Fresh sign-in + OTP)")
   log("p5", -5, "u-gulzer", "Approval decided", "Revised code of conduct accepted (one-click link)")
   log("p3", -20, "u-tashi", "Lifecycle changed", "Active → Paused: Site access for Chakan plant suspended")
