@@ -1082,6 +1082,8 @@ export async function lifecycleAction(projectId: string, op: "pause" | "resume" 
     p.cancelRequest = { reason: reason.trim(), at: nowIso(), by: ctx.user.id }
     audit(ctx.user.id, "Cancellation requested", reason, projectId)
     notify({ userIds: db().users.filter((u) => u.kind === "admin").map((u) => u.id), tier: 1, title: `Cancellation of ${p.code} needs Admin confirmation`, projectId: undefined })
+    // Everyone on the project, client side included, learns about it with the reason.
+    notify({ userIds: projectUserIds(projectId), tier: 1, title: `Cancellation requested for ${p.name}`, projectId, exclude: ctx.user.id })
     return ok("Cancellation requested — an Admin must confirm.")
   })
 }
@@ -1098,6 +1100,7 @@ export async function adminConfirmCancel(projectId: string) {
     if (!p || !p.cancelRequest) return fail("No cancellation is waiting for confirmation.")
     if (["closed", "cancelled", "archived"].includes(p.lifecycle)) return fail("This project is already finished.")
     p.lifecycle = "cancelled"
+    p.cancelled = { at: nowIso(), by: admin.id }
     d.approvals.filter((a) => a.projectId === projectId && a.state === "pending").forEach((a) => (a.state = "withdrawn"))
     d.changeRequests.filter((c) => c.projectId === projectId && !["implemented", "declined", "withdrawn"].includes(c.state)).forEach((c) => (c.state = "withdrawn"))
     d.actions.filter((a) => a.projectId === projectId && a.state === "open").forEach((a) => (a.state = "cancelled"))

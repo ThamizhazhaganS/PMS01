@@ -1,10 +1,10 @@
 import Link from "next/link"
-import { ChevronRight, CirclePause, OctagonAlert } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
 import { approvals, orgById, statuses, userName } from "@/lib/data"
 import { isOwner, isProjectDirector } from "@/lib/access/audience"
-import { fmtDate, relDays } from "@/lib/domain/rules"
 import { HealthBadge, LifecycleBadge } from "@/components/shared/badges"
+import { LifecycleNotice } from "@/components/shared/lifecycle-notice"
 import { ProjectNav, type ProjectNavItem, SectionHeading } from "@/components/shared/project-nav"
 import { LifecycleControls } from "@/components/staff/lifecycle-controls"
 
@@ -63,27 +63,10 @@ export default async function ProjectLayout({ children, params }: { children: Re
           viewerId={ctx.user.id}
         />
       </div>
-      {p.lifecycle === "paused" && p.pause && (
-        <div className="mb-4 flex gap-3 rounded-lg border border-warn/30 bg-warn-soft p-3 text-sm">
-          <CirclePause className="mt-0.5 size-4 shrink-0 text-warn" />
-          <div>
-            <b>Paused</b> {relDays(p.pause.at)} by {userName(p.pause.by)}: {p.pause.reason}
-            <div className="text-xs text-muted-foreground">Due dates are flagged paused and overdue alerts are suspended.</div>
-          </div>
-        </div>
-      )}
-      {["closed", "cancelled", "archived"].includes(p.lifecycle) && (
+      <LifecycleNotice project={p} />
+      {["closed", "archived"].includes(p.lifecycle) && (
         <div className="mb-4 rounded-lg border bg-muted p-3 text-sm">
           <b>Read-only.</b> This project is {p.lifecycle}. Records are retained and cannot be changed; the CEO can reopen it with a reason.
-        </div>
-      )}
-      {p.cancelRequest && p.lifecycle !== "cancelled" && (
-        <div className="mb-4 flex gap-3 rounded-lg border border-bad/30 bg-bad-soft p-3 text-sm">
-          <OctagonAlert className="mt-0.5 size-4 shrink-0 text-bad" />
-          <div>
-            <b>Cancellation requested</b> by {userName(p.cancelRequest.by)} on {fmtDate(p.cancelRequest.at)}: {p.cancelRequest.reason}
-            <div className="text-xs text-muted-foreground">Waiting for an Admin to confirm.</div>
-          </div>
         </div>
       )}
       <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">

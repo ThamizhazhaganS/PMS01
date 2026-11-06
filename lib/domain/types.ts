@@ -64,6 +64,8 @@ export interface Project {
   targetEnd: ISODate
   pause?: { reason: string; at: ISODateTime; by: string }
   cancelRequest?: { reason: string; at: ISODateTime; by: string }
+  /** Set when the Admin confirms the cancellation. */
+  cancelled?: { at: ISODateTime; by: string }
   closure?: Closure
   /** Closure records from earlier cycles, preserved when a project is reopened (REQ-PRJ-06). */
   previousClosures?: Closure[]

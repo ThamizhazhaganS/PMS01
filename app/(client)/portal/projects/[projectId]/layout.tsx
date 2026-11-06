@@ -4,6 +4,7 @@ import { canSubmitChange } from "@/lib/access/audience"
 import { LifecycleBadge } from "@/components/shared/badges"
 import { clientSections } from "@/components/client/views"
 import { RequestChangeButton } from "@/components/client/client-controls"
+import { LifecycleNotice } from "@/components/shared/lifecycle-notice"
 import { ProjectNav, type ProjectNavItem, SectionHeading } from "@/components/shared/project-nav"
 import { ClientBreadcrumb } from "@/components/client/project-switcher"
 
@@ -33,6 +34,7 @@ export default async function ClientProjectLayout({ children, params }: { childr
         </div>
         {canSubmitChange(ctx) && ctx.project.lifecycle !== "proposal" && <RequestChangeButton projectId={projectId} decisions={decs} />}
       </div>
+      <LifecycleNotice project={ctx.project} client />
       <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
         <ProjectNav items={nav} />
         <div className="min-w-0 pt-6 lg:pt-0">
