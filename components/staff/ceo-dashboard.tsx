@@ -21,7 +21,7 @@ function Headline({ icon: Icon, label, children, sub }: { icon: typeof Clock; la
 }
 
 /** The four numbers a CEO checks every day. */
-export function Headlines({ t }: { t: Totals }) {
+export function Headlines({ t, waitingLabel = "Waiting on client" }: { t: Totals; waitingLabel?: string }) {
   const timePct = t.agreedHours > 0 ? Math.round((t.loggedHours / t.agreedHours) * 100) : undefined
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -29,7 +29,7 @@ export function Headlines({ t }: { t: Totals }) {
         <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{t.live} live</div>
         <HealthBar health={t.health} className="mt-3 h-1.5" />
       </Headline>
-      <Headline icon={Stamp} label="Waiting on client" sub={t.overdueApprovals ? <span className="text-bad">{t.overdueApprovals} overdue</span> : "None overdue"}>
+      <Headline icon={Stamp} label={waitingLabel} sub={t.overdueApprovals ? <span className="text-bad">{t.overdueApprovals} overdue</span> : "None overdue"}>
         <div className={cn("mt-2 text-2xl font-semibold tracking-tight tabular-nums", t.overdueApprovals > 0 && "text-bad")}>{t.pendingApprovals}</div>
       </Headline>
       <Headline icon={Hourglass} label="Time used" sub={timePct === undefined ? "No approved estimates yet" : undefined}>
@@ -50,11 +50,11 @@ export function Headlines({ t }: { t: Totals }) {
 const TAG = { bad: "bg-bad-soft text-bad", warn: "bg-warn-soft text-warn", plain: "bg-muted text-foreground" }
 
 /** Monday to Friday, with each milestone under its day. */
-export function WeekStrip({ days, count }: { days: WeekDay[]; count: number }) {
+export function WeekStrip({ days, count, title = "This week" }: { days: WeekDay[]; count: number; title?: string }) {
   return (
     <section className="rounded-2xl border bg-card p-5" aria-labelledby="week-h">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 id="week-h" className="text-base font-semibold">This week</h2>
+        <h2 id="week-h" className="text-base font-semibold">{title}</h2>
         <span className="text-xs text-muted-foreground">{count === 0 ? "Nothing due this week" : `${count} milestone${count === 1 ? "" : "s"} due`}</span>
       </div>
       <ol className="mt-4 grid grid-cols-5 gap-2">

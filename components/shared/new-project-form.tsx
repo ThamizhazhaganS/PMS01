@@ -13,8 +13,8 @@ import { useAction } from "./use-action"
 type Opt = { id: string; name: string; detail?: string }
 
 /** REQ-PRJ-01: captures everything needed to start in Setup with the default 8 phases. */
-export function NewProjectForm({ orgs, directors, staff, clients, ownerFixed, done }: { orgs: { id: string; name: string; code: string }[]; directors: Opt[]; staff: Opt[]; clients: (Opt & { orgId: string })[]; ownerFixed?: string; done: string }) {
-  const [f, setF] = useState({ name: "", clientOrgId: orgs[0]?.id ?? "", ownerId: ownerFixed ?? directors[0]?.id ?? "", objectives: "", scope: "", plannedStart: "", targetEnd: "", clientLeadId: "" })
+export function NewProjectForm({ orgs, directors, staff, clients, ownerFixed, done, initialOrgId }: { orgs: { id: string; name: string; code: string }[]; directors: Opt[]; staff: Opt[]; clients: (Opt & { orgId: string })[]; ownerFixed?: string; done: string; initialOrgId?: string }) {
+  const [f, setF] = useState({ name: "", clientOrgId: (initialOrgId && orgs.some((o) => o.id === initialOrgId) ? initialOrgId : orgs[0]?.id) ?? "", ownerId: ownerFixed ?? directors[0]?.id ?? "", objectives: "", scope: "", plannedStart: "", targetEnd: "", clientLeadId: "" })
   const [ws, setWs] = useState<string[]>([""])
   const [team, setTeam] = useState<string[]>([])
   const [withEstimate, setWithEstimate] = useState(true)

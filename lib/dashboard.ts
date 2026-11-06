@@ -19,7 +19,7 @@ const addDays = (iso: string, n: number) => {
  * milestone due in it. Anything already late is pinned to today, or to the
  * first day shown, so it cannot be missed. Weekend dates land on Friday.
  */
-export function weekStrip(user: User) {
+export function weekStrip(user: User, orgId?: string) {
   const today = todayIso()
   const dow = new Date(`${today}T00:00:00Z`).getUTCDay() // 0 Sun … 6 Sat
   const monday = dow === 0 ? addDays(today, 1) : dow === 6 ? addDays(today, 2) : addDays(today, 1 - dow)
@@ -33,7 +33,7 @@ export function weekStrip(user: User) {
   const pinTo = days.find((d) => d.today) ?? days[0]
   let count = 0
 
-  for (const p of projectsFor(user)) {
+  for (const p of projectsFor(user).filter((x) => !orgId || x.clientOrgId === orgId)) {
     const ctx = ctxFor(user, p.id)!
     if (["closed", "cancelled", "archived"].includes(p.lifecycle)) continue
     for (const m of milestones(ctx)) {
@@ -59,11 +59,12 @@ export function weekStrip(user: User) {
 
 export interface AttentionRow { id: string; tone: "bad" | "warn" | "info"; title: string; detail: string; href: string }
 
-/** Exceptions across the portfolio and items waiting for this user, in one list, worst first. */
-export function attentionMerged(user: User): AttentionRow[] {
+/** Exceptions across the portfolio and items waiting for this user, in one list, worst first. Pass `orgId` for one client. */
+export function attentionMerged(user: User, orgId?: string): AttentionRow[] {
+  const inOrg = new Set(projectsFor(user).filter((p) => !orgId || p.clientOrgId === orgId).map((p) => p.id))
   const rows: AttentionRow[] = [
-    ...attentionFor(user).map((a) => ({ id: a.id, tone: a.severity === "high" ? ("bad" as const) : ("warn" as const), title: a.title, detail: `${a.kind} · ${a.projectName}`, href: a.href })),
-    ...needsYou(user).map((n) => ({ id: `n-${n.id}`, tone: n.overdue ? ("bad" as const) : ("info" as const), title: n.title, detail: `For you · ${n.projectName}`, href: n.href })),
+    ...attentionFor(user).filter((a) => inOrg.has(a.projectId)).map((a) => ({ id: a.id, tone: a.severity === "high" ? ("bad" as const) : ("warn" as const), title: a.title, detail: `${a.kind} · ${a.projectName}`, href: a.href })),
+    ...needsYou(user).filter((n) => inOrg.has(n.projectId)).map((n) => ({ id: `n-${n.id}`, tone: n.overdue ? ("bad" as const) : ("info" as const), title: n.title, detail: `For you · ${n.projectName}`, href: n.href })),
   ]
   return rows.sort((a, b) => ["bad", "warn", "info"].indexOf(a.tone) - ["bad", "warn", "info"].indexOf(b.tone))
 }
