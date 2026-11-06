@@ -24,6 +24,8 @@ export function notify(opts: {
   title: string
   projectId?: string
   path?: string
+  /** Where client-side people should land, when it differs from `path`. */
+  clientPath?: string
   canSee?: (u: User) => boolean
   exclude?: string
 }) {
@@ -35,7 +37,7 @@ export function notify(opts: {
     const u = d.users.find((x) => x.id === id)
     if (!u || u.status !== "active") continue
     if (opts.canSee && !opts.canSee(u)) continue
-    const href = hrefFor(u, opts.projectId, opts.path)
+    const href = hrefFor(u, opts.projectId, isClientKind(u.kind) && opts.clientPath !== undefined ? opts.clientPath : opts.path)
     d.notifications.push({ id: newId("n"), userId: u.id, tier: opts.tier, title: opts.title, href, at: nowIso(), read: false, projectId: opts.projectId })
     if (opts.tier === 2 && d.digestOptOut[u.id]) continue
     d.emails.push({

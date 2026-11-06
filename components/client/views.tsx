@@ -17,6 +17,7 @@ import {
   needsYou,
   phases,
   publications,
+  recentComments,
   summary,
   threadViews,
   timeView,
@@ -31,6 +32,7 @@ import { EstimateBody } from "@/components/shared/estimate-view"
 import { CommentThreads } from "@/components/shared/comment-thread"
 import { RequestAccessButton, RequestCorrection, WithdrawChange } from "./client-controls"
 import { Initials } from "@/components/shared/ui"
+import { RecentComments } from "@/components/shared/recent-comments"
 import { EstimateFilesPanel } from "@/components/staff/estimate-editor"
 import { cn } from "@/lib/utils"
 
@@ -122,6 +124,8 @@ export function ClientOverview({ ctx, readOnly, openApproval, base }: { ctx: Acc
           </ol>
         </section>
       )}
+
+      <RecentComments items={recentComments(ctx)} href={`${base}/documents`} />
 
       <div className="grid gap-5 md:grid-cols-2">
         <section className="rounded-2xl border bg-card p-5" aria-labelledby="files-h">

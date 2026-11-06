@@ -464,6 +464,21 @@ export function pickerData(ctx: AccessCtx) {
   }
 }
 
+/**
+ * The latest comments on a project that this viewer may read, newest first.
+ * Only threads on items the viewer can see; Team-only threads for staff only.
+ */
+export function recentComments(ctx: AccessCtx, limit = 5) {
+  const items = new Map<string, string>()
+  for (const p of publications(ctx)) if (!p.retracted) items.set(p.id, p.title)
+  for (const d of documents(ctx)) if (!("restricted" in d) && !d.retracted) items.set(d.id, d.title)
+  return db()
+    .threads.filter((t) => t.projectId === ctx.project.id && items.has(t.subject.id) && (t.audience === "shared" || isProjectStaff(ctx)))
+    .flatMap((t) => t.comments.map((c) => ({ id: c.id, author: userName(c.authorId), body: c.body, at: c.at, item: items.get(t.subject.id)!, teamOnly: t.audience === "team", resolved: t.resolved })))
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, limit)
+}
+
 export function threadViews(ctx: AccessCtx, subjectId: string) {
   return threads(ctx, subjectId).map((t) => ({
     id: t.id,

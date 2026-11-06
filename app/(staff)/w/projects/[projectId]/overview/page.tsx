@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { AlertTriangle, CircleAlert, Clock, FileText, Flag, Hourglass, NotebookPen, Stamp } from "lucide-react"
 import { staffProject } from "@/lib/page-ctx"
-import { approvals, approvalView, blockers, members, milestones, needsYou, pickerData, statuses, summary, timeView, userName } from "@/lib/data"
+import { approvals, approvalView, blockers, members, milestones, needsYou, pickerData, recentComments, statuses, summary, timeView, userName } from "@/lib/data"
 import { canPublish, isProjectDirector } from "@/lib/access/audience"
 import { ROLE_LABEL, daysBetween, fmtDate, fmtDateTime, relDays, todayIso } from "@/lib/domain/rules"
 import { HealthBadge, Pill } from "@/components/shared/badges"
@@ -11,6 +11,7 @@ import { StatusDialog } from "@/components/staff/status-dialog"
 import { ClosurePanel } from "@/components/staff/closure-panel"
 import { HoursByPerson, HoursList, LogHoursDialog } from "@/components/staff/hours-log"
 import { UploadDialog } from "@/components/staff/publication-controls"
+import { RecentComments } from "@/components/shared/recent-comments"
 import { cn } from "@/lib/utils"
 
 type Tone = "bad" | "warn" | "info"
@@ -158,6 +159,8 @@ export default async function Overview({ params }: { params: Promise<{ projectId
               </details>
             )}
           </section>
+
+          <RecentComments items={recentComments(ctx)} href={`${base}/publications`} />
 
           {time.canLog && (
             <details className="group rounded-2xl border bg-card p-5">

@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { db, newId, nowIso, resetDb } from "@/lib/store"
-import { USER_COOKIE, ctxFor, getViewer, members, userName, wsName } from "@/lib/data"
+import { USER_COOKIE, audiencePeople, ctxFor, getViewer, members, userName, wsName } from "@/lib/data"
 import { audit, notify } from "@/lib/effects"
 import type {
   ActionItem,
@@ -612,6 +612,20 @@ export async function addComment(projectId: string, subject: { kind: "publicatio
     if (purpose === "correction") {
       audit(ctx.user.id, "Correction requested", `'${"title" in item ? item.title : ""}': ${body}`, projectId)
       notify({ userIds: directors(projectId).concat(item.authorId), tier: 1, title: `Correction requested on ${"title" in item ? item.title : "record"}`, projectId, path: "/publications" })
+    } else {
+      // Everyone who can read this thread hears about the comment (daily-digest tier): the whole
+      // item audience for a shared thread, Morphoverse staff only for a Team-only one.
+      const sees = seesItem(ctx, item.audience, item.authorId)
+      notify({
+        userIds: audiencePeople(projectId).map((m) => m.user.id),
+        tier: 2,
+        title: `${ctx.user.name} commented on “${"title" in item ? item.title : "an update"}”`,
+        projectId,
+        path: "/publications",
+        clientPath: "/documents",
+        canSee: (u) => sees(u) && (audience === "shared" || !isClientKind(u.kind)),
+        exclude: ctx.user.id,
+      })
     }
     return ok(purpose === "correction" ? "Correction request sent. The record stays unchanged until a revision is published." : "Comment added.")
   })

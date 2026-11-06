@@ -1,8 +1,8 @@
 // Editing hours, and comment edit / resolve / make-an-action.
 import { describe, expect, it } from "vitest"
 import { db } from "@/lib/store"
-import { actions, threadViews, timeView } from "@/lib/data"
-import { commentToAction, editComment, setThreadResolved, updateHours } from "@/lib/actions"
+import { actions, recentComments, threadViews, timeView } from "@/lib/data"
+import { addComment, commentToAction, editComment, setThreadResolved, updateHours } from "@/lib/actions"
 import { todayIso } from "@/lib/domain/rules"
 import { as, ok, raw, refused } from "./support/session"
 
@@ -56,5 +56,26 @@ describe("Comments", () => {
     expect(actions(raw("u-gulzer", "p1")).some((x) => x.id === a.id)).toBe(false)
     as("u-gulzer")
     refused(await commentToAction("p1", "th1", "c1"), /Not allowed/)
+  })
+})
+
+describe("Comment alerts and Recent comments", () => {
+  it("a shared comment alerts the client; a Team-only one never does", async () => {
+    const notes = (userId: string) => db().notifications.filter((n) => n.userId === userId && n.title.includes("commented"))
+    as("u-tashi")
+    ok(await addComment("p1", { kind: "publication", id: "pub1" }, "We will send the board deck on Friday.", "shared"))
+    expect(notes("u-gulzer")).toHaveLength(1)
+    expect(notes("u-gulzer")[0].href).toBe("/portal/projects/p1/documents")
+    expect(notes("u-sanjeev")[0].href).toBe("/w/projects/p1/publications")
+    expect(notes("u-tashi")).toHaveLength(0) // not the author
+
+    ok(await addComment("p1", { kind: "publication", id: "pub1" }, "Internal: keep the deck short.", "team"))
+    expect(notes("u-gulzer")).toHaveLength(1)
+    expect(notes("u-sanjeev")).toHaveLength(2)
+  })
+
+  it("clients see only shared comments in Recent comments; staff see both", () => {
+    expect(recentComments(raw("u-gulzer", "p1")).every((c) => !c.teamOnly)).toBe(true)
+    expect(recentComments(raw("u-tashi", "p1")).some((c) => c.teamOnly)).toBe(true)
   })
 })
