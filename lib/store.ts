@@ -67,6 +67,14 @@ export function resetDb() {
   g.__ppdb = seed()
 }
 
+/** The current demo without creating one (used when saving to the database). */
+export const rawDb = () => g.__ppdb
+
+/** Swap in a demo loaded from the database. */
+export function replaceDb(data: DB) {
+  g.__ppdb = data
+}
+
 export function newId(prefix: string) {
   const d = db()
   d.seq += 1

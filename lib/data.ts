@@ -1,6 +1,7 @@
 import "server-only"
 import { cookies } from "next/headers"
 import { db } from "@/lib/store"
+import { syncFromDb } from "@/lib/persist"
 import type {
   ApprovalRequest,
   DocumentItem,
@@ -30,6 +31,8 @@ export const DEFAULT_USER = "u-tashi"
 
 // ── Viewer ──────────────────────────────────────────────────────────────────
 export async function getViewerId() {
+  // Every request starts here, so this is where the saved demo is pulled in.
+  await syncFromDb()
   const c = await cookies()
   const id = c.get(USER_COOKIE)?.value
   // An ID that no longer exists (e.g. a renamed demo user) falls back to the default user.

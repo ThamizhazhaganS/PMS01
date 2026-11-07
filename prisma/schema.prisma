@@ -1,0 +1,21 @@
+// CtrlPMS database (Supabase Postgres).
+//
+// Stage 1: the whole demo is saved as one JSON snapshot, so data survives
+// restarts and Vercel can share it. Stage 2 adds proper tables here.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Transaction pooler, port 6543 (used by the app)
+  directUrl = env("DIRECT_URL") // Session pooler or direct, port 5432 (used to create tables)
+}
+
+/// One row per saved demo. `data` holds every project, user, comment and hour.
+model DemoState {
+  id        String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}

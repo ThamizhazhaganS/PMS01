@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { db, newId, nowIso, resetDb } from "@/lib/store"
 import { USER_COOKIE, audiencePeople, ctxFor, getViewer, members, userName, wsName } from "@/lib/data"
 import { audit, notify } from "@/lib/effects"
+import { saveToDb } from "@/lib/persist"
 import type {
   ActionItem,
   ApprovalOutcome,
@@ -99,6 +100,7 @@ async function requireCtx(projectId: string): Promise<AccessCtx> {
 async function guard(fn: () => Promise<Result> | Result): Promise<Result> {
   try {
     const r = await fn()
+    if (r.ok) await saveToDb()
     revalidatePath("/", "layout")
     return r
   } catch (e) {
@@ -124,6 +126,7 @@ export async function switchUser(userId: string) {
 
 export async function resetDemo() {
   resetDb()
+  await saveToDb()
   revalidatePath("/", "layout")
   redirect("/")
 }
@@ -132,6 +135,7 @@ export async function markAllRead() {
   const u = await getViewer()
   if (!u) return
   db().notifications.filter((n) => n.userId === u.id).forEach((n) => (n.read = true))
+  await saveToDb()
   revalidatePath("/", "layout")
 }
 
@@ -139,6 +143,7 @@ export async function sendDigestNow(): Promise<Result> {
   const q = db().emails.filter((e) => e.status === "queued_digest")
   const recipients = new Set(q.map((e) => e.userId))
   q.forEach((e) => (e.status = "sent_in_digest"))
+  await saveToDb()
   revalidatePath("/", "layout")
   return ok(`Daily digest sent to ${recipients.size} recipient(s) covering ${q.length} update(s).`)
 }
@@ -147,6 +152,7 @@ export async function setDigest(enabled: boolean): Promise<Result> {
   const u = await getViewer()
   if (!u) return fail("No session")
   db().digestOptOut[u.id] = !enabled
+  await saveToDb()
   revalidatePath("/", "layout")
   return ok(enabled ? "Daily digest emails on. Urgent (Tier 1) emails are always sent." : "Daily digest emails off. Urgent (Tier 1) emails are still sent.")
 }
